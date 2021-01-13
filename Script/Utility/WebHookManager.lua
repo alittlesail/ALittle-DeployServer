@@ -28,6 +28,7 @@ option_map = {}
 
 function DeployServer.HandleQWebHook(sender, msg)
 	local ___COROUTINE = coroutine.running()
+	ALittle.Log(msg.repository.html_url)
 	g_TaskManager:StartTaskByWebHook(msg.repository.html_url)
 	return {}
 end
