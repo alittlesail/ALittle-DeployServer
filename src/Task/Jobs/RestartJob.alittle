@@ -5,7 +5,8 @@ protected class RestartJob : Job
 {
     public await fun Execute(BuildInfo build_info) : string, string
     {
-        __CPPAPI_ServerSchedule.RestartAll();
+        var loop = new ALittle.LoopTimer(bind(__CPPAPI_ServerSchedule.RestartAll, __CPPAPI_ServerSchedule), 2000);
+        loop.Start();
         return null, null;
     }
 }

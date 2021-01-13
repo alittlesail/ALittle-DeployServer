@@ -13,7 +13,8 @@ DeployServer.RestartJob = Lua.Class(DeployServer.Job, "DeployServer.RestartJob")
 
 function DeployServer.RestartJob:Execute(build_info)
 	local ___COROUTINE = coroutine.running()
-	__CPPAPI_ServerSchedule:RestartAll()
+	local loop = ALittle.LoopTimer(Lua.Bind(__CPPAPI_ServerSchedule.RestartAll, __CPPAPI_ServerSchedule), 2000)
+	loop:Start()
 	return nil, nil
 end
 
