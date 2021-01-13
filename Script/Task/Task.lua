@@ -217,7 +217,7 @@ function DeployServer.Task:StartImpl()
 	for index, job in ___ipairs(self._job_list) do
 		local error = job:Doing(build_info)
 		if error ~= nil then
-			ALittle.Log("task" .. self._info.task_id .. ":" .. self._info.task_name .. " doing failed:" .. error)
+			ALittle.List_Push(build_info.log_list, "task" .. self._info.task_id .. ":" .. self._info.task_name .. " doing failed:" .. error)
 			break
 		end
 		self._progress = (index - 1) / ALittle.List_Len(self._job_list)

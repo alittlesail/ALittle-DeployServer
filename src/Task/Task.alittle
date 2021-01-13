@@ -93,7 +93,7 @@ protected class Task
         	var error = job.Doing(build_info);
             if (error != null)
             {
-                ALittle.Log("task"..this._info.task_id..":"..this._info.task_name.." doing failed:"..error);
+                ALittle.List_Push(build_info.log_list, "task"..this._info.task_id..":"..this._info.task_name.." doing failed:"..error);
                 break;
             }
 
