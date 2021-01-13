@@ -19,7 +19,6 @@ struct AWebHook
 [Http]
 public await static HandleQWebHook(ALittle.IHttpReceiver sender, QWebHook msg) : AWebHook
 {
-    ALittle.Log(msg.repository.html_url);
     g_TaskManager.StartTaskByWebHook(msg.repository.html_url);
     return new AWebHook();
 }
