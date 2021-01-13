@@ -45,7 +45,6 @@ DeployServer.JobType = {
 	BATCH = 1,
 	DEEPCOPY = 2,
 	COPYFILE = 3,
-	RESTART = 4,
 }
 
 DeployServer.JobStatus = {
@@ -128,8 +127,6 @@ function DeployServer.CreateJob(task, info)
 		return DeployServer.DeepCopyJob(task, info)
 	elseif info.job_type == 3 then
 		return DeployServer.CopyFileJob(task, info)
-	elseif info.job_type == 4 then
-		return DeployServer.RestartJob(task, info)
 	end
 	return nil
 end

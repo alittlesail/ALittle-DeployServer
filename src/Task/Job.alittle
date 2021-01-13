@@ -7,7 +7,6 @@ public enum JobType
     BATCH = 1;	// 批处理
     DEEPCOPY = 2;	// 复制目录
     COPYFILE = 3;	// 复制文件
-    RESTART = 4;	// 重启服务器指令
 }
 
 public struct JobInfoDetail
@@ -148,7 +147,5 @@ protected static CreateJob(Task task, JobInfo info) : Job
     	return new DeepCopyJob(task, info);
     elseif (info.job_type == JobType.COPYFILE)
     	return new CopyFileJob(task, info);
-    elseif (info.job_type == JobType.RESTART)
-    	return new RestartJob(task, info);
     return null;
 }
