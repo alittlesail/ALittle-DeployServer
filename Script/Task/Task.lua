@@ -15,6 +15,12 @@ name_list = {"task_id"},
 type_list = {"int"},
 option_map = {}
 })
+ALittle.RegStruct(-2031251578, "DeployServer.C2SCopyJob", {
+name = "DeployServer.C2SCopyJob", ns_name = "DeployServer", rl_name = "C2SCopyJob", hash_code = -2031251578,
+name_list = {"task_id","job_index"},
+type_list = {"int","int"},
+option_map = {}
+})
 ALittle.RegStruct(-2015558870, "DeployServer.NMoveJob", {
 name = "DeployServer.NMoveJob", ns_name = "DeployServer", rl_name = "NMoveJob", hash_code = -2015558870,
 name_list = {"task_id","job_index","target_index"},
@@ -97,6 +103,12 @@ ALittle.RegStruct(917908039, "DeployServer.NCreateJob", {
 name = "DeployServer.NCreateJob", ns_name = "DeployServer", rl_name = "NCreateJob", hash_code = 917908039,
 name_list = {"task_id","job_index","job_info"},
 type_list = {"int","int","DeployServer.D_JobInfo"},
+option_map = {}
+})
+ALittle.RegStruct(874244823, "DeployServer.S2CCopyJob", {
+name = "DeployServer.S2CCopyJob", ns_name = "DeployServer", rl_name = "S2CCopyJob", hash_code = 874244823,
+name_list = {},
+type_list = {},
 option_map = {}
 })
 ALittle.RegStruct(816033453, "DeployServer.NTaskStatus", {
@@ -324,6 +336,23 @@ function DeployServer.Task:CreateJob(msg)
 	self:Save()
 end
 
+function DeployServer.Task:CopyJob(msg)
+	Lua.Assert(self._status == 0, "当前任务不是空闲状态")
+	local cur_job = self._info.job_list[msg.job_index]
+	Lua.Assert(cur_job ~= nil, "要复制的任务不存在")
+	local job_info = ALittle.String_CopyTable(cur_job)
+	local job = DeployServer.CreateJob(self, job_info)
+	Lua.Assert(job ~= nil, "任务创建失败")
+	ALittle.List_Push(self._info.job_list, job_info)
+	ALittle.List_Push(self._job_list, job)
+	local ntf = {}
+	ntf.task_id = self._info.task_id
+	ntf.job_index = 0
+	ntf.job_info = job.data_info
+	A_WebAccountManager:SendMsgToAll(___all_struct[917908039], ntf)
+	self:Save()
+end
+
 function DeployServer.Task:ModifyJob(msg)
 	Lua.Assert(self._status == 0, "当前任务不是空闲状态")
 	local job = self._job_list[msg.job_index]
@@ -449,6 +478,16 @@ function DeployServer.HandleC2SCreateJob(sender, msg)
 end
 
 ALittle.RegMsgRpcCallback(-105312390, DeployServer.HandleC2SCreateJob, -1402593517)
+function DeployServer.HandleC2SCopyJob(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	A_WebAccountManager:CheckLoginByClient(sender)
+	local task = g_TaskManager:GetTask(msg.task_id)
+	Lua.Assert(task ~= nil, "任务不存在")
+	task:CopyJob(msg)
+	return {}
+end
+
+ALittle.RegMsgRpcCallback(-2031251578, DeployServer.HandleC2SCopyJob, 874244823)
 function DeployServer.HandleC2SModifyJob(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	A_WebAccountManager:CheckLoginByClient(sender)

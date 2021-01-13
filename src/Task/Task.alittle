@@ -230,6 +230,30 @@ protected class Task
         this.Save();
     }
 
+    public fun CopyJob(C2SCopyJob msg)
+    {
+        assert(this._status == TaskStatus.IDLE, "当前任务不是空闲状态");
+
+        var cur_job = this._info.job_list[msg.job_index];
+        assert (cur_job != null, "要复制的任务不存在");
+
+        var job_info = ALittle.String_CopyTable(cur_job);
+
+        var job = CreateJob(this, job_info);
+        assert (job != null, "任务创建失败");
+
+        ALittle.List_Push(this._info.job_list, job_info);
+        ALittle.List_Push(this._job_list, job);
+
+        var ntf = new NCreateJob();
+        ntf.task_id = this._info.task_id;
+        ntf.job_index = 0;
+        ntf.job_info = job.data_info;
+        A_WebAccountManager.SendMsgToAll(ntf);
+
+        this.Save();
+    }
+
     public fun ModifyJob(C2SModifyJob msg)
     {
         assert(this._status == TaskStatus.IDLE, "当前任务不是空闲状态");
@@ -449,6 +473,28 @@ public await static HandleC2SCreateJob(ALittle.IMsgCommon sender, C2SCreateJob m
     assert (task != null, "任务不存在");
     task.CreateJob(msg);
     return new S2CCreateJob();
+}
+
+public struct C2SCopyJob
+{
+    int task_id;
+    int job_index;
+}
+
+public struct S2CCopyJob
+{
+
+}
+
+[Msg]
+public await static HandleC2SCopyJob(ALittle.IMsgCommon sender, C2SCopyJob msg) : S2CCopyJob
+{
+    A_WebAccountManager.CheckLoginByClient(sender);
+
+    var task = g_TaskManager.GetTask(msg.task_id);
+    assert (task != null, "任务不存在");
+    task.CopyJob(msg);
+    return new S2CCopyJob();
 }
 
 public struct C2SModifyJob
