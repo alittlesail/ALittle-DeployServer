@@ -327,7 +327,7 @@ protected class Task
         assert(this._status == TaskStatus.IDLE, "当前任务不是空闲状态");
 
         var build_info = this._info.build_list[msg.build_index];
-        assert(build_info != null, "构建信息不存在");
+        assert(build_info != null, "构建信息不存在:"..msg.build_index);
 
         // 移除信息，删除文件
         ALittle.List_Remove(this._info.build_list, msg.build_index);

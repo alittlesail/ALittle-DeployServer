@@ -37,7 +37,7 @@ function DeployServer.HandleDownloadBuild(sender, msg)
 	local task = g_TaskManager:GetTask(msg.task_id)
 	Lua.Assert(task ~= nil, "任务不存在")
 	local build_info = task.info.build_list[msg.build_index]
-	Lua.Assert(build_info ~= nil, "构建信息不存在")
+	Lua.Assert(build_info ~= nil, "构建信息不存在:" .. msg.build_index)
 	return task:GetBuildPath(build_info.create_time), 0
 end
 

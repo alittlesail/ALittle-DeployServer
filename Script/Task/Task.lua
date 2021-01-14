@@ -405,7 +405,7 @@ end
 function DeployServer.Task:DeleteBuild(msg)
 	Lua.Assert(self._status == 0, "当前任务不是空闲状态")
 	local build_info = self._info.build_list[msg.build_index]
-	Lua.Assert(build_info ~= nil, "构建信息不存在")
+	Lua.Assert(build_info ~= nil, "构建信息不存在:" .. msg.build_index)
 	ALittle.List_Remove(self._info.build_list, msg.build_index)
 	local file_path = self:GetBuildPath(build_info.create_time)
 	ALittle.File_DeleteFile(file_path)
