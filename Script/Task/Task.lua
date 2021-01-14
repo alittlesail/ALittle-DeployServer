@@ -178,7 +178,6 @@ function DeployServer.Task:Ctor(info)
 	___rawset(self, "_status", 0)
 	___rawset(self, "_progress", 0)
 	___rawset(self, "_info", info)
-	___rawset(self, "_upper_name", ALittle.String_Upper(info.task_name))
 	if info.job_list ~= nil then
 		for index, job_info in ___ipairs(info.job_list) do
 			local job = DeployServer.CreateJob(self, job_info)
@@ -292,10 +291,6 @@ function DeployServer.Task.__getter:info()
 	return self._info
 end
 
-function DeployServer.Task.__getter:upper_name()
-	return self._upper_name
-end
-
 function DeployServer.Task:HandleDelete()
 	ALittle.File_DeleteDeepDir("DeployBuildLog/" .. self._info.task_id)
 end
@@ -307,7 +302,6 @@ function DeployServer.Task:UpdateInfo(msg)
 	for index, value in ___ipairs(msg.web_hook) do
 		self._info.web_hook[value] = true
 	end
-	self._upper_name = ALittle.String_Upper(msg.task_name)
 	local ntf = {}
 	ntf.task_id = msg.task_id
 	ntf.task_name = msg.task_name

@@ -37,7 +37,6 @@ public struct D_TaskInfo
 protected class Task
 {
     private TaskInfo _info;
-    private string _upper_name;
 
     private List<Job> _job_list = new List<Job>();
     private int _status = 0;
@@ -46,7 +45,6 @@ protected class Task
     public ctor(TaskInfo info)
     {
         this._info = info;
-        this._upper_name = ALittle.String_Upper(info.task_name);
 
         // 构建job
         if (info.job_list != null)
@@ -173,7 +171,6 @@ protected class Task
     }
 
     public get info() : TaskInfo { return this._info; }
-    public get upper_name() : string { return this._upper_name; }
 
     public fun HandleDelete()
     {
@@ -187,8 +184,6 @@ protected class Task
         this._info.web_hook = new Map<string, bool>();
         for (var index, value in msg.web_hook)
         	this._info.web_hook[value] = true;
-
-        this._upper_name = ALittle.String_Upper(msg.task_name);
 
         var ntf = new NUpdateTaskInfo();
         ntf.task_id = msg.task_id;

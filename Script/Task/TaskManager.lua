@@ -171,50 +171,6 @@ function DeployServer.TaskManager:StartTaskByWebHook(url)
 	end
 end
 
-function DeployServer.TaskManager:FindTaskByUpperKey(key)
-	local result = {}
-	local count = 0
-	for id, task in ___pairs(self._task_map) do
-		if ALittle.String_Find(task.upper_name, key) ~= nil then
-			count = count + 1
-			result[count] = task
-		end
-	end
-	return result
-end
-
-function DeployServer.TaskManager:FindTaskByUpperKeyList(key_list)
-	local result = {}
-	local count = 0
-	for id, task in ___pairs(self._task_map) do
-		local find = true
-		local init = 1
-		for index, key in ___ipairs(key_list) do
-			local pos = ALittle.String_Find(task.upper_name, key, init)
-			if pos == nil then
-				find = false
-				break
-			end
-			init = pos + ALittle.String_Len(key)
-		end
-		if find then
-			count = count + (1)
-			result[count] = task
-		end
-	end
-	return result
-end
-
-function DeployServer.TaskManager:FindTask(key)
-	key = ALittle.String_Upper(key)
-	local key_list = ALittle.String_SplitSepList(key, {" ", "\t"})
-	if key_list[1] == nil then
-		return self:FindTaskByUpperKey(key)
-	else
-		return self:FindTaskByUpperKeyList(key_list)
-	end
-end
-
 function DeployServer.TaskManager:Shutdown()
 	if DeployServer.g_JobWorker ~= nil then
 		DeployServer.g_JobWorker:Stop()
