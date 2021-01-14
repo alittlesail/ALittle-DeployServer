@@ -133,13 +133,14 @@ function DeployServer.HandleSendVirtualKeyWorker(sender, msg)
 	local cmd_list = msg.detail.virtualkey_cmd
 	local rsp = {}
 	local pids = carp.GetProcessIDByPath(detail.virtualkey_exepath)
-	rsp.content = "发送的进程个数为:" .. ALittle.List_Len(pids)
+	rsp.content = "发送的进程个数为:" .. ALittle.List_Len(pids) .. "\n"
 	for index, pid in ___ipairs(pids) do
 		for _, cmd in ___ipairs(cmd_list) do
 			if ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) ~= "\n" then
 				cmd = cmd .. "\n"
 			end
-			carp.SendVirtualKey(pid, cmd)
+			rsp.content = rsp.content .. "向进程ID:" .. pid .. " 发送命令:" .. cmd
+			Lua.Assert(carp.SendVirtualKey(pid, cmd), "发送失败")
 		end
 	end
 	return rsp

@@ -107,16 +107,16 @@ public await static HandleSendVirtualKeyWorker(ALittle.IWorkerCommon sender, QSe
 
     var cmd_list = msg.detail.virtualkey_cmd;
     var rsp = new ASendVirtualKeyExecute();
-    
     var pids = carp.GetProcessIDByPath(detail.virtualkey_exepath);
-    rsp.content = "发送的进程个数为:"..ALittle.List_Len(pids);
+    rsp.content = "发送的进程个数为:"..ALittle.List_Len(pids).."\n";
     for (var index, pid in pids)
     {
         for (var _, cmd in cmd_list)
         {
             if (ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) != "\n")
             	cmd = cmd.."\n";
-            carp.SendVirtualKey(pid, cmd);
+            rsp.content = rsp.content.."向进程ID:"..pid.." 发送命令:"..cmd;
+            assert(carp.SendVirtualKey(pid, cmd), "发送失败");
         }
     }
 

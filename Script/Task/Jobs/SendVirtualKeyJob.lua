@@ -16,7 +16,10 @@ function DeployServer.SendVirtualKeyJob:Execute(build_info)
 	local msg = {}
 	msg.detail = self._info.detail
 	local error, rsp = ALittle.IWorkerCommon.InvokeRPC(578143398, DeployServer.g_JobWorker, msg)
-	return error, rsp.content
+	if error ~= nil then
+		return error, nil
+	end
+	return nil, rsp.content
 end
 
 end
