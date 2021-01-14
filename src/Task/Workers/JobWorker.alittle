@@ -203,3 +203,27 @@ public await static HandleCreateProgressWorker(ALittle.IWorkerCommon sender, QCr
     lua.os.execute(cmd);
     return new ACreateProgressExecute();
 }
+
+public struct QKillProcessExecute
+{
+    JobInfoDetail detail;
+}
+
+public struct AKillProcessExecute
+{
+
+}
+
+[Worker]
+public await static HandleKillProcessWorker(ALittle.IWorkerCommon sender, QKillProcessExecute msg) : AKillProcessExecute
+{
+    var detail = msg.detail;
+
+    for (var index, exe_path in detail.killprocess_exe_path)
+    {
+        var pids = carp.GetProcessIDByPath(exe_path);
+        for (var _, pid in pids) carp.KillProcessByID(pid);
+    }
+
+    return new AKillProcessExecute();
+}

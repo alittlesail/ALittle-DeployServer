@@ -1,0 +1,6 @@
+
+namespace ALittleDeploy;
+
+protected class KillProcessJob
+{
+}

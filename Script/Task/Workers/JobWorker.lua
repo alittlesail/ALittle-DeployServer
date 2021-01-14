@@ -37,6 +37,12 @@ name_list = {"detail"},
 type_list = {"DeployServer.JobInfoDetail"},
 option_map = {}
 })
+ALittle.RegStruct(1368739506, "DeployServer.AKillProcessExecute", {
+name = "DeployServer.AKillProcessExecute", ns_name = "DeployServer", rl_name = "AKillProcessExecute", hash_code = 1368739506,
+name_list = {},
+type_list = {},
+option_map = {}
+})
 ALittle.RegStruct(-1351236611, "DeployServer.QDeepCopyExecute", {
 name = "DeployServer.QDeepCopyExecute", ns_name = "DeployServer", rl_name = "QDeepCopyExecute", hash_code = -1351236611,
 name_list = {"detail"},
@@ -53,6 +59,12 @@ ALittle.RegStruct(1248316217, "DeployServer.ACreateProgressExecute", {
 name = "DeployServer.ACreateProgressExecute", ns_name = "DeployServer", rl_name = "ACreateProgressExecute", hash_code = 1248316217,
 name_list = {},
 type_list = {},
+option_map = {}
+})
+ALittle.RegStruct(1166148652, "DeployServer.QKillProcessExecute", {
+name = "DeployServer.QKillProcessExecute", ns_name = "DeployServer", rl_name = "QKillProcessExecute", hash_code = 1166148652,
+name_list = {"detail"},
+type_list = {"DeployServer.JobInfoDetail"},
 option_map = {}
 })
 ALittle.RegStruct(-876622592, "DeployServer.ADeepCopyExecute", {
@@ -215,4 +227,17 @@ function DeployServer.HandleCreateProgressWorker(sender, msg)
 end
 
 ALittle.RegWorkerRpcCallback(1248316265, DeployServer.HandleCreateProgressWorker, 1248316217)
+function DeployServer.HandleKillProcessWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local detail = msg.detail
+	for index, exe_path in ___ipairs(detail.killprocess_exe_path) do
+		local pids = carp.GetProcessIDByPath(exe_path)
+		for _, pid in ___ipairs(pids) do
+			carp.KillProcessByID(pid)
+		end
+	end
+	return {}
+end
+
+ALittle.RegWorkerRpcCallback(1166148652, DeployServer.HandleKillProcessWorker, 1368739506)
 end

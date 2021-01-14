@@ -35,8 +35,8 @@ option_map = {}
 })
 ALittle.RegStruct(1232578034, "DeployServer.JobInfoDetail", {
 name = "DeployServer.JobInfoDetail", ns_name = "DeployServer", rl_name = "JobInfoDetail", hash_code = 1232578034,
-name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd","wait_p_exit_exe_path","wait_p_exit_max_time","createprocess_dir","createprocess_cmd","createprocess_param"},
-type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>","List<string>","int","string","string","string"},
+name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd","wait_p_exit_exe_path","wait_p_exit_max_time","createprocess_dir","createprocess_cmd","createprocess_param","killprocess_exe_path"},
+type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>","List<string>","int","string","string","string","List<string>"},
 option_map = {}
 })
 
@@ -48,6 +48,7 @@ DeployServer.JobType = {
 	SENDVIRTUALKEY = 4,
 	WAITPROCSSEXIT = 5,
 	CREATEPROCESS = 6,
+	KILLPROCESS = 7,
 }
 
 DeployServer.JobStatus = {
@@ -142,6 +143,8 @@ function DeployServer.CreateJob(task, info)
 		return DeployServer.WaitProcessExitJob(task, info)
 	elseif info.job_type == 6 then
 		return DeployServer.CreateProcessJob(task, info)
+	elseif info.job_type == 7 then
+		return DeployServer.KillProcessJob(task, info)
 	end
 	return nil
 end

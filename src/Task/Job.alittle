@@ -10,6 +10,7 @@ public enum JobType
     SENDVIRTUALKEY = 4;	// 发送命令
     WAITPROCSSEXIT = 5; // 等待进程退出
     CREATEPROCESS = 6;	// 创建进程
+    KILLPROCESS = 7;	// 强杀进程
 }
 
 public struct JobInfoDetail
@@ -41,6 +42,9 @@ public struct JobInfoDetail
     string createprocess_dir;
     string createprocess_cmd;
     string createprocess_param;
+
+    // 杀死进程
+    List<string> killprocess_exe_path;	//  exe的绝对路径
 }
 
 protected struct JobInfo
@@ -178,5 +182,7 @@ protected static CreateJob(Task task, JobInfo info) : Job
     	return new WaitProcessExitJob(task, info);
     elseif (info.job_type == JobType.CREATEPROCESS)
     	return new CreateProcessJob(task, info);
+    elseif (info.job_type == JobType.KILLPROCESS)
+    	return new KillProcessJob(task, info);
     return null;
 }
