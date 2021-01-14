@@ -43,6 +43,18 @@ name_list = {"detail"},
 type_list = {"DeployServer.JobInfoDetail"},
 option_map = {}
 })
+ALittle.RegStruct(1248316265, "DeployServer.QCreateProgressExecute", {
+name = "DeployServer.QCreateProgressExecute", ns_name = "DeployServer", rl_name = "QCreateProgressExecute", hash_code = 1248316265,
+name_list = {"detail"},
+type_list = {"DeployServer.JobInfoDetail"},
+option_map = {}
+})
+ALittle.RegStruct(1248316217, "DeployServer.ACreateProgressExecute", {
+name = "DeployServer.ACreateProgressExecute", ns_name = "DeployServer", rl_name = "ACreateProgressExecute", hash_code = 1248316217,
+name_list = {},
+type_list = {},
+option_map = {}
+})
 ALittle.RegStruct(-876622592, "DeployServer.ADeepCopyExecute", {
 name = "DeployServer.ADeepCopyExecute", ns_name = "DeployServer", rl_name = "ADeepCopyExecute", hash_code = -876622592,
 name_list = {},
@@ -184,4 +196,23 @@ function DeployServer.HandleWaitProcessExitWorker(sender, msg)
 end
 
 ALittle.RegWorkerRpcCallback(2052715406, DeployServer.HandleWaitProcessExitWorker, -1941486856)
+function DeployServer.HandleCreateProgressWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local detail = msg.detail
+	local cmd = ""
+	if detail.batch_dir ~= nil and detail.batch_dir ~= "" then
+		local index = ALittle.String_Find(detail.batch_dir, ":")
+		if index ~= nil then
+			cmd = cmd .. ALittle.String_Sub(detail.batch_dir, 1, index) .. " && "
+		end
+		if index ~= ALittle.String_Len(detail.batch_dir) then
+			cmd = cmd .. "cd \"" .. detail.batch_dir .. "\" && "
+		end
+	end
+	cmd = cmd .. "start " .. detail.batch_cmd .. " " .. detail.batch_param
+	os.execute(cmd)
+	return {}
+end
+
+ALittle.RegWorkerRpcCallback(1248316265, DeployServer.HandleCreateProgressWorker, 1248316217)
 end

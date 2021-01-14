@@ -9,6 +9,7 @@ public enum JobType
     COPYFILE = 3;	// 复制文件
     SENDVIRTUALKEY = 4;	// 发送命令
     WAITPROCSSEXIT = 5; // 等待进程退出
+    CREATEPROCESS = 6;	// 创建进程
 }
 
 public struct JobInfoDetail
@@ -35,6 +36,11 @@ public struct JobInfoDetail
     // 等待进程退出
     List<string> wait_p_exit_exe_path;	//  exe的绝对路径
     int wait_p_exit_max_time;			// 最多等待多少秒，小于或等于0表示永远等待
+
+    // 创建进程
+    string createprocess_dir;
+    string createprocess_cmd;
+    string createprocess_param;
 }
 
 protected struct JobInfo
@@ -170,5 +176,7 @@ protected static CreateJob(Task task, JobInfo info) : Job
     	return new SendVirtualKeyJob(task, info);
     elseif (info.job_type == JobType.WAITPROCSSEXIT)
     	return new WaitProcessExitJob(task, info);
+    elseif (info.job_type == JobType.CREATEPROCESS)
+    	return new CreateProcessJob(task, info);
     return null;
 }

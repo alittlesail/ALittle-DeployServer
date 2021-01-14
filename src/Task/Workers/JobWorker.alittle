@@ -175,3 +175,31 @@ public await static HandleWaitProcessExitWorker(ALittle.IWorkerCommon sender, QW
 
     return new AWaitProcessExitExecute();
 }
+
+public struct QCreateProgressExecute
+{
+    JobInfoDetail detail;
+}
+
+public struct ACreateProgressExecute
+{
+}
+
+[Worker]
+public await static HandleCreateProgressWorker(ALittle.IWorkerCommon sender, QCreateProgressExecute msg) : ACreateProgressExecute
+{
+    var detail = msg.detail;
+
+    var cmd = "";
+    if (detail.batch_dir != null && detail.batch_dir != "")
+    {
+        var index = ALittle.String_Find(detail.batch_dir, ":");
+        if (index != null)
+            cmd = cmd..ALittle.String_Sub(detail.batch_dir, 1, index).." && ";
+        if (index != ALittle.String_Len(detail.batch_dir))
+        	cmd = cmd.."cd \""..detail.batch_dir.."\" && ";
+    }
+    cmd = cmd.."start "..detail.batch_cmd.." "..detail.batch_param;
+    lua.os.execute(cmd);
+    return new ACreateProgressExecute();
+}
