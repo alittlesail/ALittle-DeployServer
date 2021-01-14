@@ -187,6 +187,10 @@ function DeployServer.Task:Ctor(info)
 	end
 end
 
+function DeployServer.Task:GetJobIndex(job)
+	return ALittle.List_IndexOf(self._job_list, job)
+end
+
 function DeployServer.Task:Save()
 	local error = A_MysqlSystem:UpdateOne(___all_struct[276033112], self._info, "task_id", self._info.task_id)
 	if error ~= nil then

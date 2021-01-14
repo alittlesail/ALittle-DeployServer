@@ -35,8 +35,8 @@ option_map = {}
 })
 ALittle.RegStruct(1232578034, "DeployServer.JobInfoDetail", {
 name = "DeployServer.JobInfoDetail", ns_name = "DeployServer", rl_name = "JobInfoDetail", hash_code = 1232578034,
-name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd","wait_p_exit_exe_path"},
-type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>","List<string>"},
+name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd","wait_p_exit_exe_path","wait_p_exit_max_time"},
+type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>","List<string>","int"},
 option_map = {}
 })
 
@@ -117,6 +117,7 @@ end
 function DeployServer.Job:SendStatus()
 	local status_msg = {}
 	status_msg.task_id = self._task.info.task_id
+	status_msg.index = self._task:GetJobIndex(self)
 	status_msg.status = self._status
 	status_msg.progress = self._progress
 	A_WebAccountManager:SendMsgToAll(___all_struct[1462309182], status_msg)

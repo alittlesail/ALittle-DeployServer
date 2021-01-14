@@ -140,6 +140,7 @@ public await static HandleWaitProcessExitWorker(ALittle.IWorkerCommon sender, QW
     for (var index, exe_path in detail.wait_p_exit_exe_path)
         wait_map[exe_path] = true;
 
+    var remain_time = detail.wait_p_exit_max_time;
     while (true)
     {
         var wait_remove:Map<string, bool>;
@@ -161,8 +162,13 @@ public await static HandleWaitProcessExitWorker(ALittle.IWorkerCommon sender, QW
 
         if (ALittle.IsEmpty(wait_map)) break;
 
-        // 延时1秒，然后再查
+        // 延时1秒
         A_LoopSystem.Sleep(1000);
+
+        // 如果只剩下1秒了，那么就直接退出
+        if (remain_time == 1) break;
+        // 减少1
+        if (remain_time > 1) --remain_time;
     }
 
     return new AWaitProcessExitExecute();

@@ -151,6 +151,7 @@ function DeployServer.HandleWaitProcessExitWorker(sender, msg)
 	for index, exe_path in ___ipairs(detail.wait_p_exit_exe_path) do
 		wait_map[exe_path] = true
 	end
+	local remain_time = detail.wait_p_exit_max_time
 	while true do
 		local wait_remove
 		for exe_path, _ in ___pairs(wait_map) do
@@ -171,6 +172,12 @@ function DeployServer.HandleWaitProcessExitWorker(sender, msg)
 			break
 		end
 		A_LoopSystem:Sleep(1000)
+		if remain_time == 1 then
+			break
+		end
+		if remain_time > 1 then
+			remain_time = remain_time - 1
+		end
 	end
 	return {}
 end

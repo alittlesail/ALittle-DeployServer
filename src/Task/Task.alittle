@@ -59,6 +59,8 @@ protected class Task
         }
     }
 
+    public fun GetJobIndex(Job job) : int { return ALittle.List_IndexOf(this._job_list, job); }
+
     public async fun Save()
     {
         var error = A_MysqlSystem.UpdateOne(this._info, "task_id", this._info.task_id);

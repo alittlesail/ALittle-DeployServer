@@ -34,6 +34,7 @@ public struct JobInfoDetail
 
     // 等待进程退出
     List<string> wait_p_exit_exe_path;	//  exe的绝对路径
+    int wait_p_exit_max_time;			// 最多等待多少秒，小于或等于0表示永远等待
 }
 
 protected struct JobInfo
@@ -134,6 +135,7 @@ protected class Job
     {
         var status_msg = new NJobStatus();
         status_msg.task_id = this._task.info.task_id;
+        status_msg.index = this._task.GetJobIndex(this);
         status_msg.status = this._status;
         status_msg.progress = this._progress;
         A_WebAccountManager.SendMsgToAll(status_msg);
