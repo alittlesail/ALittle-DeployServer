@@ -209,7 +209,7 @@ function DeployServer.HandleCreateProgressWorker(sender, msg)
 			cmd = cmd .. "cd \"" .. detail.batch_dir .. "\" && "
 		end
 	end
-	cmd = cmd .. "start " .. detail.batch_cmd .. " " .. detail.batch_param .. " && exit"
+	cmd = cmd .. "start " .. detail.batch_cmd .. " " .. detail.batch_param
 	os.execute(cmd)
 	return {}
 end

@@ -199,7 +199,7 @@ public await static HandleCreateProgressWorker(ALittle.IWorkerCommon sender, QCr
         if (index != ALittle.String_Len(detail.batch_dir))
         	cmd = cmd.."cd \""..detail.batch_dir.."\" && ";
     }
-    cmd = cmd.."start "..detail.batch_cmd.." "..detail.batch_param.." && exit";
+    cmd = cmd.."start "..detail.batch_cmd.." "..detail.batch_param;
     lua.os.execute(cmd);
     return new ACreateProgressExecute();
 }
