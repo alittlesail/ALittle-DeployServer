@@ -34,7 +34,9 @@ public async static __Module_Setup(string sengine_path, string module_path, stri
         
     __CPPAPI_ServerSchedule.CreateHttpServer(yun_ip, wan_ip, ALittle.RoutePort.RT_DEPLOY_HTTP + port_offset, false);
     __CPPAPI_ServerSchedule.CreateClientServer(yun_ip, wan_ip, ALittle.RoutePort.RT_DEPLOY_CLIENT + port_offset, false);
-    
+
+    ALittle.RegHttpDownloadCallbackFactory(HttpDownloadCallbackFactory);
+
     A_WebAccountManager.Setup();
     g_KeyValueManager.Setup();
     g_TaskManager.Setup();
@@ -45,4 +47,20 @@ public static __Module_Shutdown()
 {
     g_TaskManager.Shutdown();
     g_KeyValueManager.Shutdown();
+}
+
+public static HttpDownloadCallbackFactory(string method) : Functor<await(ALittle.IHttpReceiver, any):string, int>
+{
+    return cast<Functor<await(ALittle.IHttpReceiver, any):string, int>>(HandleFileDownload);
+}
+
+public struct QFileDownload
+{
+
+}
+
+[HttpDownload]
+public await static HandleFileDownload(ALittle.IHttpReceiver client, QFileDownload msg) : string, int
+{
+    return "DeployClient/"..client.method, 0;
 }
