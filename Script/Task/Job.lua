@@ -53,6 +53,7 @@ DeployServer.JobStatus = {
 	WAITING = 0,
 	DOING = 1,
 	COMPLETED = 2,
+	FAILED = 3,
 }
 
 DeployServer.Job = Lua.Class(nil, "DeployServer.Job")
@@ -103,8 +104,12 @@ function DeployServer.Job:Doing(build_info)
 		end
 	end
 	ALittle.List_Push(build_info.log_list, "===>[" .. ALittle.Time_GetCurDate() .. "]Job End")
-	self._status = 2
-	self._progress = 1
+	if error ~= nil then
+		self._status = 3
+	else
+		self._status = 2
+		self._progress = 1
+	end
 	self:SendStatus()
 	return error
 end

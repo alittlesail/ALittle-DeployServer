@@ -50,6 +50,7 @@ public enum JobStatus
     WAITING = 0;	// 等待执行
     DOING = 1;		// 正在执行
     COMPLETED = 2;	// 执行完成
+    FAILED = 3;		// 执行失败
 }
 
 public struct D_JobInfo
@@ -123,8 +124,15 @@ protected class Job
         }
         ALittle.List_Push(build_info.log_list, "===>["..ALittle.Time_GetCurDate().."]Job End");
         
-        this._status = JobStatus.COMPLETED;
-        this._progress = 1;
+        if (error != null)
+        {
+            this._status = JobStatus.FAILED;
+        }
+        else
+        {
+            this._status = JobStatus.COMPLETED;
+            this._progress = 1;
+        }
         this.SendStatus();
         return error;
     }
