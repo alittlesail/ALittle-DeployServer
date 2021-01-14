@@ -192,7 +192,7 @@ public await static HandleCreateProgressWorker(ALittle.IWorkerCommon sender, QCr
 
     var work_path:string;
     if (detail.createprocess_dir != null && detail.createprocess_dir != "") work_path = detail.createprocess_dir;
-    var result = carp.CreateProcess(detail.createprocess_cmd.." "..detail.createprocess_param, work_path);
+    var result = carp.CreateProcess(detail.createprocess_cmd, detail.createprocess_param, work_path);
     assert(result, "进程创建失败");
     return new ACreateProgressExecute();
 }

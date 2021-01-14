@@ -215,7 +215,7 @@ function DeployServer.HandleCreateProgressWorker(sender, msg)
 	if detail.createprocess_dir ~= nil and detail.createprocess_dir ~= "" then
 		work_path = detail.createprocess_dir
 	end
-	local result = carp.CreateProcess(detail.createprocess_cmd .. " " .. detail.createprocess_param, work_path)
+	local result = carp.CreateProcess(detail.createprocess_cmd, detail.createprocess_param, work_path)
 	Lua.Assert(result, "进程创建失败")
 	return {}
 end
