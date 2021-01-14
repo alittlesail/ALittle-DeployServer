@@ -190,17 +190,10 @@ public await static HandleCreateProgressWorker(ALittle.IWorkerCommon sender, QCr
 {
     var detail = msg.detail;
 
-    var cmd = "";
-    if (detail.batch_dir != null && detail.batch_dir != "")
-    {
-        var index = ALittle.String_Find(detail.batch_dir, ":");
-        if (index != null)
-            cmd = cmd..ALittle.String_Sub(detail.batch_dir, 1, index).." && ";
-        if (index != ALittle.String_Len(detail.batch_dir))
-        	cmd = cmd.."cd \""..detail.batch_dir.."\" && ";
-    }
-    cmd = cmd.."start "..detail.batch_cmd.." "..detail.batch_param;
-    lua.os.execute(cmd);
+    var work_path:string;
+    if (detail.createprocess_dir != null && detail.createprocess_dir != "") work_path = detail.createprocess_dir;
+    var result = carp.CreateProcess(detail.createprocess_cmd.." "..detail.createprocess_param, work_path);
+    assert(result, "进程创建失败");
     return new ACreateProgressExecute();
 }
 

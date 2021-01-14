@@ -1,6 +1,13 @@
 
-namespace ALittleDeploy;
+namespace DeployServer;
 
-protected class KillProcessJob
+protected class KillProcessJob : Job
 {
+    public await fun Execute(BuildInfo build_info) : string, string
+    {
+        var msg = new QKillProcessExecute();
+        msg.detail = this._info.detail;
+        var error, rsp = HandleKillProcessWorker(g_JobWorker, msg);
+        return error, null;
+    }
 }
