@@ -35,8 +35,8 @@ option_map = {}
 })
 ALittle.RegStruct(1232578034, "DeployServer.JobInfoDetail", {
 name = "DeployServer.JobInfoDetail", ns_name = "DeployServer", rl_name = "JobInfoDetail", hash_code = 1232578034,
-name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd"},
-type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>"},
+name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd","wait_p_exit_exe_path"},
+type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>","List<string>"},
 option_map = {}
 })
 
@@ -46,6 +46,7 @@ DeployServer.JobType = {
 	DEEPCOPY = 2,
 	COPYFILE = 3,
 	SENDVIRTUALKEY = 4,
+	WAITPROCSSEXIT = 5,
 }
 
 DeployServer.JobStatus = {
@@ -130,6 +131,8 @@ function DeployServer.CreateJob(task, info)
 		return DeployServer.CopyFileJob(task, info)
 	elseif info.job_type == 4 then
 		return DeployServer.SendVirtualKeyJob(task, info)
+	elseif info.job_type == 5 then
+		return DeployServer.WaitProcessExitJob(task, info)
 	end
 	return nil
 end

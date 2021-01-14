@@ -7,6 +7,18 @@ local ALittle = ALittle
 local ___pairs = pairs
 local ___ipairs = ipairs
 
+ALittle.RegStruct(2052715406, "DeployServer.QWaitProcessExitExecute", {
+name = "DeployServer.QWaitProcessExitExecute", ns_name = "DeployServer", rl_name = "QWaitProcessExitExecute", hash_code = 2052715406,
+name_list = {"detail"},
+type_list = {"DeployServer.JobInfoDetail"},
+option_map = {}
+})
+ALittle.RegStruct(-1941486856, "DeployServer.AWaitProcessExitExecute", {
+name = "DeployServer.AWaitProcessExitExecute", ns_name = "DeployServer", rl_name = "AWaitProcessExitExecute", hash_code = -1941486856,
+name_list = {},
+type_list = {},
+option_map = {}
+})
 ALittle.RegStruct(1870092216, "DeployServer.ABatchExecute", {
 name = "DeployServer.ABatchExecute", ns_name = "DeployServer", rl_name = "ABatchExecute", hash_code = 1870092216,
 name_list = {"exit_code","content"},
@@ -132,4 +144,36 @@ function DeployServer.HandleSendVirtualKeyWorker(sender, msg)
 end
 
 ALittle.RegWorkerRpcCallback(578143398, DeployServer.HandleSendVirtualKeyWorker, 578143414)
+function DeployServer.HandleWaitProcessExitWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local detail = msg.detail
+	local wait_map = {}
+	for index, exe_path in ___ipairs(detail.wait_p_exit_exe_path) do
+		wait_map[exe_path] = true
+	end
+	while true do
+		local wait_remove
+		for exe_path, _ in ___pairs(wait_map) do
+			local pids = carp.GetProcessIDByPath(exe_path)
+			if ALittle.List_Len(pids) == 0 then
+				if wait_remove == nil then
+					wait_remove = {}
+				end
+				wait_remove[exe_path] = true
+			end
+		end
+		if wait_remove ~= nil then
+			for exe_path, _ in ___pairs(wait_remove) do
+				wait_map[exe_path] = nil
+			end
+		end
+		if ALittle.IsEmpty(wait_map) then
+			break
+		end
+		A_LoopSystem:Sleep(1000)
+	end
+	return {}
+end
+
+ALittle.RegWorkerRpcCallback(2052715406, DeployServer.HandleWaitProcessExitWorker, -1941486856)
 end

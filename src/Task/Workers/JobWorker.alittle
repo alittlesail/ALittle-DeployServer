@@ -120,3 +120,50 @@ public await static HandleSendVirtualKeyWorker(ALittle.IWorkerCommon sender, QSe
 
     return new ASendVirtualKeyExecute();
 }
+
+public struct QWaitProcessExitExecute
+{
+    JobInfoDetail detail;
+}
+
+public struct AWaitProcessExitExecute
+{
+
+}
+
+[Worker]
+public await static HandleWaitProcessExitWorker(ALittle.IWorkerCommon sender, QWaitProcessExitExecute msg) : AWaitProcessExitExecute
+{
+    var detail = msg.detail;
+
+    var wait_map = new Map<string, bool>();
+    for (var index, exe_path in detail.wait_p_exit_exe_path)
+        wait_map[exe_path] = true;
+
+    while (true)
+    {
+        var wait_remove:Map<string, bool>;
+        for (var exe_path, _ in wait_map)
+        {
+            var pids = carp.GetProcessIDByPath(exe_path);
+            if (ALittle.List_Len(pids) == 0)
+            {
+                if (wait_remove == null) wait_remove = new Map<string, bool>();
+                wait_remove[exe_path] = true;
+            }
+        }
+
+        if (wait_remove != null)
+        {
+            for (var exe_path, _ in wait_remove)
+            	wait_map[exe_path] = null;
+        }
+
+        if (ALittle.IsEmpty(wait_map)) break;
+
+        // 延时1秒，然后再查
+        A_LoopSystem.Sleep(1000);
+    }
+
+    return new AWaitProcessExitExecute();
+}

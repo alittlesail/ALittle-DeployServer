@@ -8,6 +8,7 @@ public enum JobType
     DEEPCOPY = 2;	// 复制目录
     COPYFILE = 3;	// 复制文件
     SENDVIRTUALKEY = 4;	// 发送命令
+    WAITPROCSSEXIT = 5; // 等待进程退出
 }
 
 public struct JobInfoDetail
@@ -30,6 +31,9 @@ public struct JobInfoDetail
     // 发送虚拟按键
     string virtualkey_exepath;	// exe的绝对路径
     List<string> virtualkey_cmd;		// 命令
+
+    // 等待进程退出
+    List<string> wait_p_exit_exe_path;	//  exe的绝对路径
 }
 
 protected struct JobInfo
@@ -154,5 +158,7 @@ protected static CreateJob(Task task, JobInfo info) : Job
     	return new CopyFileJob(task, info);
     elseif (info.job_type == JobType.SENDVIRTUALKEY)
     	return new SendVirtualKeyJob(task, info);
+    elseif (info.job_type == JobType.WAITPROCSSEXIT)
+    	return new WaitProcessExitJob(task, info);
     return null;
 }
