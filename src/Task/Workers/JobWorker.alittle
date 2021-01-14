@@ -89,3 +89,34 @@ public await static HandleCopyFileWorker(ALittle.IWorkerCommon sender, QCopyFile
     }
     return rsp;
 }
+
+public struct QSendVirtualKeyExecute
+{
+    JobInfoDetail detail;
+}
+
+public struct ASendVirtualKeyExecute
+{
+
+}
+
+[Worker]
+public await static HandleSendVirtualKeyWorker(ALittle.IWorkerCommon sender, QSendVirtualKeyExecute msg) : ASendVirtualKeyExecute
+{
+    var detail = msg.detail;
+
+    var cmd_list = msg.detail.virtualkey_cmd;
+    
+    var pids = carp.GetProcessIDByPath(detail.virtualkey_exepath);
+    for (var index, pid in pids)
+    {
+        for (var _, cmd in cmd_list)
+        {
+            if (ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) != "\n")
+            	cmd = cmd.."\n";
+            carp.SendVirtualKey(pid, cmd);
+        }
+    }
+
+    return new ASendVirtualKeyExecute();
+}

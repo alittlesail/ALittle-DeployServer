@@ -7,6 +7,7 @@ public enum JobType
     BATCH = 1;	// 批处理
     DEEPCOPY = 2;	// 复制目录
     COPYFILE = 3;	// 复制文件
+    SENDVIRTUALKEY = 4;	// 发送命令
 }
 
 public struct JobInfoDetail
@@ -25,6 +26,10 @@ public struct JobInfoDetail
     string copyfile_src;
     List<string> copyfile_file;
     string copyfile_dst;
+
+    // 发送虚拟按键
+    string virtualkey_exepath;	// exe的绝对路径
+    List<string> virtualkey_cmd;		// 命令
 }
 
 protected struct JobInfo
@@ -147,5 +152,7 @@ protected static CreateJob(Task task, JobInfo info) : Job
     	return new DeepCopyJob(task, info);
     elseif (info.job_type == JobType.COPYFILE)
     	return new CopyFileJob(task, info);
+    elseif (info.job_type == JobType.SENDVIRTUALKEY)
+    	return new SendVirtualKeyJob(task, info);
     return null;
 }

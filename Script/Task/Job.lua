@@ -35,8 +35,8 @@ option_map = {}
 })
 ALittle.RegStruct(1232578034, "DeployServer.JobInfoDetail", {
 name = "DeployServer.JobInfoDetail", ns_name = "DeployServer", rl_name = "JobInfoDetail", hash_code = 1232578034,
-name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst"},
-type_list = {"string","string","string","string","string","string","string","List<string>","string"},
+name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd"},
+type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>"},
 option_map = {}
 })
 
@@ -45,6 +45,7 @@ DeployServer.JobType = {
 	BATCH = 1,
 	DEEPCOPY = 2,
 	COPYFILE = 3,
+	SENDVIRTUALKEY = 4,
 }
 
 DeployServer.JobStatus = {
@@ -127,6 +128,8 @@ function DeployServer.CreateJob(task, info)
 		return DeployServer.DeepCopyJob(task, info)
 	elseif info.job_type == 3 then
 		return DeployServer.CopyFileJob(task, info)
+	elseif info.job_type == 4 then
+		return DeployServer.SendVirtualKeyJob(task, info)
 	end
 	return nil
 end

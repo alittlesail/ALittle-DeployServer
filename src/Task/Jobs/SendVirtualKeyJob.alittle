@@ -1,0 +1,13 @@
+
+namespace DeployServer;
+
+protected class SendVirtualKeyJob : Job
+{
+    public await fun Execute(BuildInfo build_info) : string, string
+    {
+        var msg = new QSendVirtualKeyExecute();
+        msg.detail = this._info.detail;
+        var error, rsp = HandleSendVirtualKeyWorker(g_JobWorker, msg);
+        return error, null;
+    }
+}

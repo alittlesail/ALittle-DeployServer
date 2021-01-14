@@ -37,6 +37,18 @@ name_list = {},
 type_list = {},
 option_map = {}
 })
+ALittle.RegStruct(578143414, "DeployServer.ASendVirtualKeyExecute", {
+name = "DeployServer.ASendVirtualKeyExecute", ns_name = "DeployServer", rl_name = "ASendVirtualKeyExecute", hash_code = 578143414,
+name_list = {},
+type_list = {},
+option_map = {}
+})
+ALittle.RegStruct(578143398, "DeployServer.QSendVirtualKeyExecute", {
+name = "DeployServer.QSendVirtualKeyExecute", ns_name = "DeployServer", rl_name = "QSendVirtualKeyExecute", hash_code = 578143398,
+name_list = {"detail"},
+type_list = {"DeployServer.JobInfoDetail"},
+option_map = {}
+})
 ALittle.RegStruct(-467409153, "DeployServer.QCopyFileExecute", {
 name = "DeployServer.QCopyFileExecute", ns_name = "DeployServer", rl_name = "QCopyFileExecute", hash_code = -467409153,
 name_list = {"detail"},
@@ -103,4 +115,21 @@ function DeployServer.HandleCopyFileWorker(sender, msg)
 end
 
 ALittle.RegWorkerRpcCallback(-467409153, DeployServer.HandleCopyFileWorker, 1447368920)
+function DeployServer.HandleSendVirtualKeyWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local detail = msg.detail
+	local cmd_list = msg.detail.virtualkey_cmd
+	local pids = carp.GetProcessIDByPath(detail.virtualkey_exepath)
+	for index, pid in ___ipairs(pids) do
+		for _, cmd in ___ipairs(cmd_list) do
+			if ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) ~= "\n" then
+				cmd = cmd .. "\n"
+			end
+			carp.SendVirtualKey(pid, cmd)
+		end
+	end
+	return {}
+end
+
+ALittle.RegWorkerRpcCallback(578143398, DeployServer.HandleSendVirtualKeyWorker, 578143414)
 end
