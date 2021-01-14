@@ -97,7 +97,7 @@ public struct QSendVirtualKeyExecute
 
 public struct ASendVirtualKeyExecute
 {
-
+    string content;
 }
 
 [Worker]
@@ -106,8 +106,10 @@ public await static HandleSendVirtualKeyWorker(ALittle.IWorkerCommon sender, QSe
     var detail = msg.detail;
 
     var cmd_list = msg.detail.virtualkey_cmd;
+    var rsp = new ASendVirtualKeyExecute();
     
     var pids = carp.GetProcessIDByPath(detail.virtualkey_exepath);
+    rsp.content = "发送的进程个数为:"..ALittle.List_Len(pids);
     for (var index, pid in pids)
     {
         for (var _, cmd in cmd_list)
@@ -118,7 +120,7 @@ public await static HandleSendVirtualKeyWorker(ALittle.IWorkerCommon sender, QSe
         }
     }
 
-    return new ASendVirtualKeyExecute();
+    return rsp;
 }
 
 public struct QWaitProcessExitExecute
@@ -166,7 +168,7 @@ public await static HandleWaitProcessExitWorker(ALittle.IWorkerCommon sender, QW
         A_LoopSystem.Sleep(1000);
 
         // 如果只剩下1秒了，那么就直接退出
-        if (remain_time == 1) break;
+        assert (remain_time != 1, "等待超时");
         // 减少1
         if (remain_time > 1) --remain_time;
     }

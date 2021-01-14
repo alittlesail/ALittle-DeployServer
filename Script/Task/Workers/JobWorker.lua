@@ -51,8 +51,8 @@ option_map = {}
 })
 ALittle.RegStruct(578143414, "DeployServer.ASendVirtualKeyExecute", {
 name = "DeployServer.ASendVirtualKeyExecute", ns_name = "DeployServer", rl_name = "ASendVirtualKeyExecute", hash_code = 578143414,
-name_list = {},
-type_list = {},
+name_list = {"content"},
+type_list = {"string"},
 option_map = {}
 })
 ALittle.RegStruct(578143398, "DeployServer.QSendVirtualKeyExecute", {
@@ -131,7 +131,9 @@ function DeployServer.HandleSendVirtualKeyWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	local detail = msg.detail
 	local cmd_list = msg.detail.virtualkey_cmd
+	local rsp = {}
 	local pids = carp.GetProcessIDByPath(detail.virtualkey_exepath)
+	rsp.content = "发送的进程个数为:" .. ALittle.List_Len(pids)
 	for index, pid in ___ipairs(pids) do
 		for _, cmd in ___ipairs(cmd_list) do
 			if ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) ~= "\n" then
@@ -140,7 +142,7 @@ function DeployServer.HandleSendVirtualKeyWorker(sender, msg)
 			carp.SendVirtualKey(pid, cmd)
 		end
 	end
-	return {}
+	return rsp
 end
 
 ALittle.RegWorkerRpcCallback(578143398, DeployServer.HandleSendVirtualKeyWorker, 578143414)
@@ -172,9 +174,7 @@ function DeployServer.HandleWaitProcessExitWorker(sender, msg)
 			break
 		end
 		A_LoopSystem:Sleep(1000)
-		if remain_time == 1 then
-			break
-		end
+		Lua.Assert(remain_time ~= 1, "等待超时")
 		if remain_time > 1 then
 			remain_time = remain_time - 1
 		end
