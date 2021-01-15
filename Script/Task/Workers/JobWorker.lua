@@ -110,7 +110,9 @@ function DeployServer.HandleBatchWorker(sender, msg)
 	local file = io.popen(cmd, "rb")
 	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
 	rsp.content = file:read("*a")
-	rsp.exit_code = file:close()
+	local result, error, status = file:close()
+	Lua.Assert(result, error)
+	rsp.exit_code = status
 	return rsp
 end
 

@@ -32,7 +32,9 @@ public await static HandleBatchWorker(ALittle.IWorkerCommon sender, QBatchExecut
     var file = lua.io.popen(cmd, "rb");
     assert (file != null, "命令执行失败:"..cmd);
     rsp.content = file.read("*a");
-    rsp.exit_code = file.close();
+    var result, error, status = file.close();
+    assert(result, error);
+    rsp.exit_code = status;
     return rsp;
 }
 
