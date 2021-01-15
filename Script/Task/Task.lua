@@ -252,6 +252,11 @@ function DeployServer.Task:StartImpl()
 	self._status = 0
 	self._progress = 1
 	self:SendStatus()
+	local task_name = ALittle.String_ToString(self._info.task_id)
+	if self._info.task_name ~= nil then
+		task_name = self._info.task_name
+	end
+	ALittle.Log("任务(" .. task_name .. ")执行结束")
 	do
 		local msg = {}
 		msg.task_id = self._info.task_id

@@ -133,6 +133,10 @@ protected class Task
         this._progress = 1;
         this.SendStatus();
 
+        var task_name = ALittle.String_ToString(this._info.task_id);
+        if (this._info.task_name != null) task_name = this._info.task_name;
+        ALittle.Log("任务("..task_name..")执行结束");
+
         // 发送build
         {
             var msg = new NCreateBuild();
