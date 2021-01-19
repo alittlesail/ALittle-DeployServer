@@ -22,7 +22,8 @@ function DeployServer.__Module_Setup(sengine_path, module_path, config_path)
 	Require(sengine_path, "Script/WebAccount/WebAccountManager")
 	Require(sengine_path, "Script/WebAccount/WebOPSManager")
 	DeployServer.g_ModuleScriptPath = module_path .. "Script/"
-	RequireFromPaths(module_path, "Script/Utility/", {"WebHookManager.alittle", "SettingManager.alittle", "KeyValueManager.alittle"})
+	RequireFromPaths(module_path, "Script/Utility/", {"WebHookManager.alittle", "SettingManager.alittle", "KeyValueManager.alittle"
+		, "DirectoryManager.alittle"})
 	RequireFromPaths(module_path, "Script/Task/", {"TaskManager.alittle", "Task.alittle", "Job.alittle"
 		, "Build.alittle", "Jobs/WaitProcessExitJob.alittle", "Jobs/SendVirtualKeyJob.alittle"
 		, "Jobs/KillProcessJob.alittle", "Jobs/DeepCopyJob.alittle", "Jobs/CreateProcessJob.alittle"

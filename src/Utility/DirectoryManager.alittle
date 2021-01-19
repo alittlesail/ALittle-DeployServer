@@ -1,0 +1,40 @@
+
+namespace DeployServer;
+
+public struct QShowCurPath
+{
+}
+
+public struct AShowCurPath
+{
+    string path;
+}
+
+[Msg]
+public await static HandleShowCurPath(ALittle.IMsgCommon sender, QShowCurPath msg) : AShowCurPath
+{
+    var rsp = new AShowCurPath();
+    rsp.path = ALittle.File_GetCurrentPath();
+    return rsp;
+}
+
+public struct QShowPathInfo
+{
+    string path;
+}
+
+public struct AShowPathInfo
+{
+    Map<string, ALittle.PathAttribute> info_map;
+}
+
+[Msg]
+public await static HandleShowPathInfo(ALittle.IMsgCommon sender, QShowPathInfo msg) : AShowPathInfo
+{
+    var attr = ALittle.File_GetFileAttr(msg.path);
+    assert(attr != null && attr.directory, "路径不存在");
+
+    var rsp = new AShowPathInfo();
+	rsp.info_map = ALittle.File_GetNameListByDir(msg.path);
+    return rsp;
+}
