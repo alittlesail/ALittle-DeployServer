@@ -6,19 +6,35 @@ public struct WebHookRepository
     string html_url;
 }
 
-struct QWebHook
+struct QWebHookByGithub
 {
     WebHookRepository repository;
 }
 
-struct AWebHook
+struct AWebHookByGithub
 {
 
 }
 
 [Http]
-public await static HandleQWebHook(ALittle.IHttpReceiver sender, QWebHook msg) : AWebHook
+public await static HandleQWebHookByGithub(ALittle.IHttpReceiver sender, QWebHookByGithub msg) : AWebHookByGithub
 {
     g_TaskManager.StartTaskByWebHook(msg.repository.html_url);
-    return new AWebHook();
+    return new AWebHookByGithub();
+}
+
+struct QWebHookBySvn
+{
+}
+
+struct AWebHookBySvn
+{
+
+}
+
+[Http]
+public await static HandleQWebHookBySvn(ALittle.IHttpReceiver sender, QWebHookBySvn msg) : AWebHookBySvn
+{
+    g_TaskManager.StartTaskByWebHook(sender.url);
+    return new AWebHookBySvn();
 }
