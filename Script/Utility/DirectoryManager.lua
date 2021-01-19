@@ -7,6 +7,12 @@ local ALittle = ALittle
 local ___pairs = pairs
 local ___ipairs = ipairs
 
+ALittle.RegStruct(-1449992286, "DeployServer.AShowAllDriver", {
+name = "DeployServer.AShowAllDriver", ns_name = "DeployServer", rl_name = "AShowAllDriver", hash_code = -1449992286,
+name_list = {"driver_list"},
+type_list = {"List<string>"},
+option_map = {}
+})
 ALittle.RegStruct(-1210770538, "DeployServer.AShowCurPath", {
 name = "DeployServer.AShowCurPath", ns_name = "DeployServer", rl_name = "AShowCurPath", hash_code = -1210770538,
 name_list = {"path"},
@@ -23,6 +29,12 @@ ALittle.RegStruct(839664979, "ALittle.PathAttribute", {
 name = "ALittle.PathAttribute", ns_name = "ALittle", rl_name = "PathAttribute", hash_code = 839664979,
 name_list = {"directory","size"},
 type_list = {"bool","int"},
+option_map = {}
+})
+ALittle.RegStruct(-788489550, "DeployServer.QShowAllDriver", {
+name = "DeployServer.QShowAllDriver", ns_name = "DeployServer", rl_name = "QShowAllDriver", hash_code = -788489550,
+name_list = {},
+type_list = {},
 option_map = {}
 })
 ALittle.RegStruct(-617554749, "DeployServer.AShowPathInfo", {
@@ -46,6 +58,14 @@ function DeployServer.HandleShowCurPath(sender, msg)
 end
 
 ALittle.RegMsgRpcCallback(1018450360, DeployServer.HandleShowCurPath, -1210770538)
+function DeployServer.HandleShowAllDriver(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local rsp = {}
+	rsp.driver_list = ALittle.File_GetAllDriver()
+	return rsp
+end
+
+ALittle.RegMsgRpcCallback(-788489550, DeployServer.HandleShowAllDriver, -1449992286)
 function DeployServer.HandleShowPathInfo(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	local attr = ALittle.File_GetFileAttr(msg.path)

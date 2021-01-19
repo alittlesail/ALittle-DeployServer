@@ -18,6 +18,23 @@ public await static HandleShowCurPath(ALittle.IMsgCommon sender, QShowCurPath ms
     return rsp;
 }
 
+public struct QShowAllDriver
+{
+}
+
+public struct AShowAllDriver
+{
+    List<string> driver_list;
+}
+
+[Msg]
+public await static HandleShowAllDriver(ALittle.IMsgCommon sender, QShowAllDriver msg) : AShowAllDriver
+{
+    var rsp = new AShowAllDriver();
+    rsp.driver_list = ALittle.File_GetAllDriver();
+    return rsp;
+}
+
 public struct QShowPathInfo
 {
     string path;
