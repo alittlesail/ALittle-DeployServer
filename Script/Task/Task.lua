@@ -177,6 +177,7 @@ function DeployServer.Task:Ctor(info)
 	___rawset(self, "_job_list", {})
 	___rawset(self, "_status", 0)
 	___rawset(self, "_progress", 0)
+	___rawset(self, "_next_do", false)
 	___rawset(self, "_info", info)
 	if info.job_list ~= nil then
 		for index, job_info in ___ipairs(info.job_list) do
@@ -203,7 +204,19 @@ function DeployServer.Task:Start()
 		return "当前任务不是空闲状态"
 	end
 	self:StartImpl()
+	if self._next_do then
+		self._next_do = false
+		self:StartImpl()
+	end
 	return nil
+end
+
+function DeployServer.Task:ForceStart()
+	if self._status ~= 0 then
+		self._next_do = true
+	else
+		self:StartImpl()
+	end
 end
 
 function DeployServer.Task:StartImpl()
@@ -286,7 +299,7 @@ function DeployServer.Task:StartByWebHook(url)
 	end
 	for key, open in ___pairs(self._info.web_hook) do
 		if key == url and open then
-			self:Start()
+			self:ForceStart()
 			break
 		end
 	end
