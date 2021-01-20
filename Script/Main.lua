@@ -26,8 +26,9 @@ function DeployServer.__Module_Setup(sengine_path, module_path, config_path)
 		, "DirectoryManager.alittle"})
 	RequireFromPaths(module_path, "Script/Task/", {"TaskManager.alittle", "Task.alittle", "Job.alittle"
 		, "Build.alittle", "Jobs/WaitProcessExitJob.alittle", "Jobs/SendVirtualKeyJob.alittle"
-		, "Jobs/KillProcessJob.alittle", "Jobs/DeepCopyJob.alittle", "Jobs/CreateProcessJob.alittle"
-		, "Jobs/CopyFileJob.alittle", "Jobs/BatchJob.alittle", "Workers/JobWorker.alittle"})
+		, "Jobs/ReSharperRedmineJob.alittle", "Jobs/KillProcessJob.alittle", "Jobs/DeepCopyJob.alittle"
+		, "Jobs/CreateProcessJob.alittle", "Jobs/CopyFileJob.alittle", "Jobs/BatchJob.alittle"
+		, "Workers/JobWorker.alittle"})
 	math.randomseed(os.time())
 	DeployServer.g_ConfigSystem = ALittle.CreateJsonConfig(config_path, true)
 	local wan_ip = DeployServer.g_ConfigSystem:GetConfig("wan_ip", "127.0.0.1")

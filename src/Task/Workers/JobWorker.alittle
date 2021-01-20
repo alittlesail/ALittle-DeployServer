@@ -222,3 +222,77 @@ public await static HandleKillProcessWorker(ALittle.IWorkerCommon sender, QKillP
 
     return new AKillProcessExecute();
 }
+
+public struct QReSharperCodeCheck
+{
+    JobInfoDetail detail;
+}
+
+public struct AReSharperCodeCheck
+{
+    string content;
+    int exit_code;
+}
+
+[Worker]
+public await static HandleReSharperCodeCheckWorker(ALittle.IWorkerCommon sender, QReSharperCodeCheck msg) : AReSharperCodeCheck
+{
+    var detail = msg.detail;
+
+    // 检查inspectcode.exe是否存在
+    {
+        var attr = ALittle.File_GetFileAttr(detail.r2r_resharper_exe_path);
+	    assert (attr != null && !attr.directory, "检查工具不存在");
+    }
+
+    // 检查工程文件
+    {
+        var attr = ALittle.File_GetFileAttr(detail.r2r_resharper_sln_path);
+        assert (attr != null && !attr.directory, "要检查的工程文件不存在");
+    }
+
+    // 创建缓存目录，输出目录
+    {
+        assert(detail.r2r_resharper_cache_path != "", "缓存路径不能为空");
+        ALittle.File_MakeDeepDir(detail.r2r_resharper_cache_path);
+        assert(detail.r2r_resharper_output_path != "", "输出路径不能为空");
+        ALittle.File_MakeDeepDir(detail.r2r_resharper_output_path);
+    }
+
+    // 添加执行文件
+    var cmd = "\""..detail.r2r_resharper_exe_path.."\"";
+    // 添加缓存路径
+    cmd = cmd.." --caches-home=\""..detail.r2r_resharper_cache_path.."\"";
+    // 添加输出路径
+    var output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path);
+    cmd = cmd.." -o=\""..output_path.."report.xml\"";
+    // 指定格式
+    cmd = cmd.." -f=Xml";
+    // 处理的制定文件
+    cmd = cmd.." \""..detail.r2r_resharper_sln_path.."\"";
+    cmd = cmd..detail.batch_cmd.." "..detail.batch_param;
+    var file = lua.io.popen(cmd, "rb");
+    assert (file != null, "命令执行失败:"..cmd);
+
+    var rsp = new AReSharperCodeCheck();
+    rsp.content = file.read("*a");
+    var result, error, status = file.close();
+    assert(result, error);
+    rsp.exit_code = status;
+    return rsp;
+}
+
+public struct QSubmitRedmine
+{
+    JobInfoDetail detail;
+}
+
+public struct ASubmitRedmine
+{
+}
+
+[Worker]
+public await static HandleSubmitRedmineWorker(ALittle.IWorkerCommon sender, QSubmitRedmine msg) : ASubmitRedmine
+{
+    return new ASubmitRedmine();
+}

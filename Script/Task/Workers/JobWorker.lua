@@ -67,6 +67,12 @@ name_list = {"detail"},
 type_list = {"DeployServer.JobInfoDetail"},
 option_map = {}
 })
+ALittle.RegStruct(915473947, "DeployServer.ASubmitRedmine", {
+name = "DeployServer.ASubmitRedmine", ns_name = "DeployServer", rl_name = "ASubmitRedmine", hash_code = 915473947,
+name_list = {},
+type_list = {},
+option_map = {}
+})
 ALittle.RegStruct(-876622592, "DeployServer.ADeepCopyExecute", {
 name = "DeployServer.ADeepCopyExecute", ns_name = "DeployServer", rl_name = "ADeepCopyExecute", hash_code = -876622592,
 name_list = {},
@@ -81,6 +87,24 @@ option_map = {}
 })
 ALittle.RegStruct(578143398, "DeployServer.QSendVirtualKeyExecute", {
 name = "DeployServer.QSendVirtualKeyExecute", ns_name = "DeployServer", rl_name = "QSendVirtualKeyExecute", hash_code = 578143398,
+name_list = {"detail"},
+type_list = {"DeployServer.JobInfoDetail"},
+option_map = {}
+})
+ALittle.RegStruct(545241476, "DeployServer.QSubmitRedmine", {
+name = "DeployServer.QSubmitRedmine", ns_name = "DeployServer", rl_name = "QSubmitRedmine", hash_code = 545241476,
+name_list = {"detail"},
+type_list = {"DeployServer.JobInfoDetail"},
+option_map = {}
+})
+ALittle.RegStruct(511985580, "DeployServer.AReSharperCodeCheck", {
+name = "DeployServer.AReSharperCodeCheck", ns_name = "DeployServer", rl_name = "AReSharperCodeCheck", hash_code = 511985580,
+name_list = {"content","exit_code"},
+type_list = {"string","int"},
+option_map = {}
+})
+ALittle.RegStruct(475800478, "DeployServer.QReSharperCodeCheck", {
+name = "DeployServer.QReSharperCodeCheck", ns_name = "DeployServer", rl_name = "QReSharperCodeCheck", hash_code = 475800478,
 name_list = {"detail"},
 type_list = {"DeployServer.JobInfoDetail"},
 option_map = {}
@@ -236,4 +260,45 @@ function DeployServer.HandleKillProcessWorker(sender, msg)
 end
 
 ALittle.RegWorkerRpcCallback(1166148652, DeployServer.HandleKillProcessWorker, 1368739506)
+function DeployServer.HandleReSharperCodeCheckWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local detail = msg.detail
+	do
+		local attr = ALittle.File_GetFileAttr(detail.r2r_resharper_exe_path)
+		Lua.Assert(attr ~= nil and not attr.directory, "检查工具不存在")
+	end
+	do
+		local attr = ALittle.File_GetFileAttr(detail.r2r_resharper_sln_path)
+		Lua.Assert(attr ~= nil and not attr.directory, "要检查的工程文件不存在")
+	end
+	do
+		Lua.Assert(detail.r2r_resharper_cache_path ~= "", "缓存路径不能为空")
+		ALittle.File_MakeDeepDir(detail.r2r_resharper_cache_path)
+		Lua.Assert(detail.r2r_resharper_output_path ~= "", "输出路径不能为空")
+		ALittle.File_MakeDeepDir(detail.r2r_resharper_output_path)
+	end
+	local cmd = "\"" .. detail.r2r_resharper_exe_path .. "\""
+	cmd = cmd .. " --caches-home=\"" .. detail.r2r_resharper_cache_path .. "\""
+	local output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path)
+	cmd = cmd .. " -o=\"" .. output_path .. "report.xml\""
+	cmd = cmd .. " -f=Xml"
+	cmd = cmd .. " \"" .. detail.r2r_resharper_sln_path .. "\""
+	cmd = cmd .. detail.batch_cmd .. " " .. detail.batch_param
+	local file = io.popen(cmd, "rb")
+	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
+	local rsp = {}
+	rsp.content = file:read("*a")
+	local result, error, status = file:close()
+	Lua.Assert(result, error)
+	rsp.exit_code = status
+	return rsp
+end
+
+ALittle.RegWorkerRpcCallback(475800478, DeployServer.HandleReSharperCodeCheckWorker, 511985580)
+function DeployServer.HandleSubmitRedmineWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	return {}
+end
+
+ALittle.RegWorkerRpcCallback(545241476, DeployServer.HandleSubmitRedmineWorker, 915473947)
 end

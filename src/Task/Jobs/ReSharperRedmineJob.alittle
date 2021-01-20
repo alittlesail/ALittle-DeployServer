@@ -1,0 +1,15 @@
+
+namespace DeployServer;
+
+protected class ReSharperRedmineJob : Job
+{
+    public await fun Execute(BuildInfo build_info) : string, string
+    {
+        {
+            var msg = new QReSharperCodeCheck();
+            msg.detail = this._info.detail;
+            var error, rsp = HandleReSharperCodeCheckWorker(g_JobWorker, msg);
+            return error, rsp.content.."\nexit_code:"..rsp.exit_code;
+        }
+    }
+}
