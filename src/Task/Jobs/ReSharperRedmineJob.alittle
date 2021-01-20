@@ -1,16 +1,208 @@
 
 namespace DeployServer;
 
+public struct ReSharperReportIssue
+{
+    string type_id;		// 问题类型
+    string file;			// 文件相对路径
+    int offset_start;		// 起始偏移
+    int offset_end;		// 结束偏移
+    int line;			// 行数
+    string message;		// 问题信息
+    string account;	// 文件最后修改的账号
+    string project;	// 项目名
+}
+
+
 protected class ReSharperRedmineJob : Job
 {
     public await fun Execute(BuildInfo build_info) : string, string
     {
+        // 解析代码出现报告
         {
-            var msg = new QReSharperCodeCheck();
-            msg.detail = this._info.detail;
-            var error, rsp = HandleReSharperCodeCheckWorker(g_JobWorker, msg);
-            if (error != null) return error, null;
-            return error, rsp.content.."\nexit_code:"..rsp.exit_code;
+        //    var msg = new QReSharperCodeCheck();
+            //    msg.detail = this._info.detail;
+            //    var error, rsp = HandleReSharperCodeCheckWorker(g_JobWorker, msg);
+            //if (error != null) return error, null;
         }
+
+        // 解析报告
+        //var issue_types_map, project_issue = this.AnalysisReport();
+
+        // 分析报告
+        var issue_type, issue_map = this.AnalysisReport();
+
+        // 删除redmine
+        {
+            var msg = new QRedmineDeleteIssuesAssignedToMe();
+            msg.curl_exe_path = this._info.detail.r2r_curl_exe_path;
+            msg.url = this._info.detail.r2r_redmine_url;
+            msg.account = this._info.detail.r2r_redmine_account;
+            msg.password = this._info.detail.r2r_redmine_password;
+            msg.project_id = this._info.detail.r2r_redmine_project_id;
+            var error, rsp = DeployServer.HandleRedmineDeleteIssuesAssignedToMeWorker(g_JobWorker, msg);
+            assert (error == null, error);
+        }
+
+        // 根据每个报告查找对应的最后修改账号
+        for (var project_name, issue_list in issue_map)
+        {
+            for (var index, issue in issue_list)
+            {
+                issue.account = "";
+            }
+        }
+
+        // 根据修改账号重新整理map
+        var account_map = new Map<string, Map<string, List<ReSharperReportIssue>>>();
+        for (var project_name, issue_list in issue_map)
+        {
+            for (var index, issue in issue_list)
+            {
+                var project_map = account_map[issue.account];
+                if (project_map == null)
+                {
+                    project_map = new Map<string, List<ReSharperReportIssue>>();
+                    account_map[project_name] = project_map;
+                }
+                var list = project_map[issue.project];
+                if (list == null)
+                {
+                    list = new List<ReSharperReportIssue>();
+                    project_map[issue.project] = list;
+                }
+                ALittle.List_Push(list, issue);
+            }
+        }
+
+        // 创建一个任务
+        for (var account_name, project_map in account_map)
+        {
+            var description = new List<string>();
+            var count = 0;
+            var account:string = "";
+            for (var project_name, issue_list in project_map)
+            {
+                ++count;
+                description[count] = "项目:"..project_name;
+                for (var index, issue in issue_list)
+                {
+                    account = issue.account;
+
+                    var desc = "\tFile:"..issue.file.." Line:"..issue.line.." ["..issue.offset_start..", "..issue.offset_end.."] Message:"..issue.message;
+
+                    ++count;
+                    description[count] = desc;
+                }
+            }
+
+            var msg = new QRedmineCreateIssue();
+            msg.url = this._info.detail.r2r_redmine_url;
+            msg.account = this._info.detail.r2r_redmine_account;
+            msg.password = this._info.detail.r2r_redmine_password;
+            var detail = new RedmineCreateIssueInfoDetail();
+            msg.info = new RedmineCreateIssueInfo();
+            msg.info.issue = detail;
+        
+            // 获取映射
+            var watcher_id = this._info.detail.r2r_redmine_account_map[account];
+            if (watcher_id != null)
+            {
+                detail.watcher_user_ids = new List<int>();
+                detail.watcher_user_ids[1] = watcher_id;
+            }
+            detail.project_id = ALittle.Math_ToInt(this._info.detail.r2r_redmine_project_id);
+            detail.subject = "代码检查";
+            detail.assigned_to_id = ALittle.Math_ToInt(this._info.detail.r2r_redmine_account_id);
+            detail.priority_id = 2;
+            detail.description = ALittle.String_Join(description, "\r\n");
+
+            var error, rsp = DeployServer.HandleRedmineCreateIssueWorker(g_JobWorker, msg);
+            assert(error == null, error);
+        }
+        
+        return null, null;
+    }
+
+    private fun AnalysisReport() : Map<string, string>, Map<string, List<ReSharperReportIssue>>
+    {
+        var detail = this._info.detail;
+
+        // 添加输出路径
+        var output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path).."report.xml";
+
+        var xml = new tinyxml2.XMLDocument();
+        assert(xml.LoadFile(output_path), "xml报告文件加载失败");
+
+        var root = xml.RootElement();
+        assert(root, "xml报告文件没有跟节点");
+
+        // 问题类型映射优先级
+        var issue_types_map = new Map<string, string>();
+
+        // 获取问题类型列表
+        var issue_types = root.FindElement("IssueTypes");
+        if (issue_types != null)
+        {
+            var issue_child = issue_types.FirstChild();
+            while (issue_child != null)
+            {
+                var issue_element = issue_child.ToElement();
+                if (issue_element != null)
+                {
+                    var id_attr = issue_element.Attribute("Id");
+                    var severity_attr = issue_element.Attribute("Severity");
+                    if (id_attr != null && severity_attr != null)
+                        issue_types_map[id_attr] = severity_attr;
+                }
+                issue_child = issue_child.NextSibling();
+            }
+        }
+
+        // 收集
+        var project_issue = new Map<string, List<ReSharperReportIssue>>();
+
+        // 遍历问题列表
+        var issue = root.FindElement("Issues");
+        if (issue != null)
+        {
+            var issue_child = issue.FirstChild();
+            while (issue_child != null)
+            {
+                var project_element = issue_child.ToElement();
+                if (project_element != null)
+                {
+                    var project_name = project_element.Attribute("Name");
+                    if (project_name != null)
+                    {
+                        var list = new List<ReSharperReportIssue>();
+                        project_issue[project_name] = list;
+                        var p_issue_child = project_element.FirstChild();
+                        while (p_issue_child != null)
+                        {
+                            var p_issue_element = p_issue_child.ToElement();
+                            if (p_issue_element != null)
+                            {
+                                var info = new ReSharperReportIssue();
+                                info.type_id = p_issue_element.Attribute("TypeId");
+                                info.file = p_issue_element.Attribute("File");
+                                var offset = p_issue_element.Attribute("Offset");
+                                var offset_list = ALittle.String_Split(offset, "-");
+                                if (offset_list[1] != null) info.offset_start = ALittle.Math_ToInt(offset_list[1]);
+                                if (offset_list[2] != null) info.offset_end = ALittle.Math_ToInt(offset_list[2]);
+                                info.line = ALittle.Math_ToInt(p_issue_element.Attribute("Line"));
+                                info.message = p_issue_element.Attribute("Message");
+                                info.project = project_name;
+                                ALittle.List_Push(list, info);
+                            }
+                            p_issue_child = p_issue_child.NextSibling();
+                        }
+                    }
+                }
+                issue_child = issue_child.NextSibling();
+            }
+        }
+
+        return issue_types_map, project_issue;
     }
 }

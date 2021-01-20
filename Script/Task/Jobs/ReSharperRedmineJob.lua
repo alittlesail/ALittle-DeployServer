@@ -7,6 +7,12 @@ local ALittle = ALittle
 local ___pairs = pairs
 local ___ipairs = ipairs
 
+ALittle.RegStruct(-1102617310, "DeployServer.ReSharperReportIssue", {
+name = "DeployServer.ReSharperReportIssue", ns_name = "DeployServer", rl_name = "ReSharperReportIssue", hash_code = -1102617310,
+name_list = {"type_id","file","offset_start","offset_end","line","message","account","project"},
+type_list = {"string","string","int","int","int","string","string","string"},
+option_map = {}
+})
 
 assert(DeployServer.Job, " extends class:DeployServer.Job is nil")
 DeployServer.ReSharperRedmineJob = Lua.Class(DeployServer.Job, "DeployServer.ReSharperRedmineJob")
@@ -14,14 +20,138 @@ DeployServer.ReSharperRedmineJob = Lua.Class(DeployServer.Job, "DeployServer.ReS
 function DeployServer.ReSharperRedmineJob:Execute(build_info)
 	local ___COROUTINE = coroutine.running()
 	do
-		local msg = {}
-		msg.detail = self._info.detail
-		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(475800478, DeployServer.g_JobWorker, msg)
-		if error ~= nil then
-			return error, nil
-		end
-		return error, rsp.content .. "\nexit_code:" .. rsp.exit_code
 	end
+	local issue_type, issue_map = self:AnalysisReport()
+	do
+		local msg = {}
+		msg.curl_exe_path = self._info.detail.r2r_curl_exe_path
+		msg.url = self._info.detail.r2r_redmine_url
+		msg.account = self._info.detail.r2r_redmine_account
+		msg.password = self._info.detail.r2r_redmine_password
+		msg.project_id = self._info.detail.r2r_redmine_project_id
+		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-469603049, DeployServer.g_JobWorker, msg)
+		Lua.Assert(error == nil, error)
+	end
+	for project_name, issue_list in ___pairs(issue_map) do
+		for index, issue in ___ipairs(issue_list) do
+			issue.account = ""
+		end
+	end
+	local account_map = {}
+	for project_name, issue_list in ___pairs(issue_map) do
+		for index, issue in ___ipairs(issue_list) do
+			local project_map = account_map[issue.account]
+			if project_map == nil then
+				project_map = {}
+				account_map[project_name] = project_map
+			end
+			local list = project_map[issue.project]
+			if list == nil then
+				list = {}
+				project_map[issue.project] = list
+			end
+			ALittle.List_Push(list, issue)
+		end
+	end
+	for account_name, project_map in ___pairs(account_map) do
+		local description = {}
+		local count = 0
+		local account = ""
+		for project_name, issue_list in ___pairs(project_map) do
+			count = count + 1
+			description[count] = "项目:" .. project_name
+			for index, issue in ___ipairs(issue_list) do
+				account = issue.account
+				local desc = "\tFile:" .. issue.file .. " Line:" .. issue.line .. " [" .. issue.offset_start .. ", " .. issue.offset_end .. "] Message:" .. issue.message
+				count = count + 1
+				description[count] = desc
+			end
+		end
+		local msg = {}
+		msg.url = self._info.detail.r2r_redmine_url
+		msg.account = self._info.detail.r2r_redmine_account
+		msg.password = self._info.detail.r2r_redmine_password
+		local detail = {}
+		msg.info = {}
+		msg.info.issue = detail
+		local watcher_id = self._info.detail.r2r_redmine_account_map[account]
+		if watcher_id ~= nil then
+			detail.watcher_user_ids = {}
+			detail.watcher_user_ids[1] = watcher_id
+		end
+		detail.project_id = ALittle.Math_ToInt(self._info.detail.r2r_redmine_project_id)
+		detail.subject = "代码检查"
+		detail.assigned_to_id = ALittle.Math_ToInt(self._info.detail.r2r_redmine_account_id)
+		detail.priority_id = 2
+		detail.description = ALittle.String_Join(description, "\r\n")
+		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1709573174, DeployServer.g_JobWorker, msg)
+		Lua.Assert(error == nil, error)
+	end
+	return nil, nil
+end
+
+function DeployServer.ReSharperRedmineJob:AnalysisReport()
+	local detail = self._info.detail
+	local output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path) .. "report.xml"
+	local xml = tinyxml2.XMLDocument()
+	Lua.Assert(xml:LoadFile(output_path), "xml报告文件加载失败")
+	local root = xml:RootElement()
+	Lua.Assert(root, "xml报告文件没有跟节点")
+	local issue_types_map = {}
+	local issue_types = root:FindElement("IssueTypes")
+	if issue_types ~= nil then
+		local issue_child = issue_types:FirstChild()
+		while issue_child ~= nil do
+			local issue_element = issue_child:ToElement()
+			if issue_element ~= nil then
+				local id_attr = issue_element:Attribute("Id")
+				local severity_attr = issue_element:Attribute("Severity")
+				if id_attr ~= nil and severity_attr ~= nil then
+					issue_types_map[id_attr] = severity_attr
+				end
+			end
+			issue_child = issue_child:NextSibling()
+		end
+	end
+	local project_issue = {}
+	local issue = root:FindElement("Issues")
+	if issue ~= nil then
+		local issue_child = issue:FirstChild()
+		while issue_child ~= nil do
+			local project_element = issue_child:ToElement()
+			if project_element ~= nil then
+				local project_name = project_element:Attribute("Name")
+				if project_name ~= nil then
+					local list = {}
+					project_issue[project_name] = list
+					local p_issue_child = project_element:FirstChild()
+					while p_issue_child ~= nil do
+						local p_issue_element = p_issue_child:ToElement()
+						if p_issue_element ~= nil then
+							local info = {}
+							info.type_id = p_issue_element:Attribute("TypeId")
+							info.file = p_issue_element:Attribute("File")
+							local offset = p_issue_element:Attribute("Offset")
+							local offset_list = ALittle.String_Split(offset, "-")
+							if offset_list[1] ~= nil then
+								info.offset_start = ALittle.Math_ToInt(offset_list[1])
+							end
+							if offset_list[2] ~= nil then
+								info.offset_end = ALittle.Math_ToInt(offset_list[2])
+							end
+							info.line = ALittle.Math_ToInt(p_issue_element:Attribute("Line"))
+							info.message = p_issue_element:Attribute("Message")
+							info.project = project_name
+							ALittle.List_Push(list, info)
+						end
+						p_issue_child = p_issue_child:NextSibling()
+					end
+				end
+			end
+			issue_child = issue_child:NextSibling()
+		end
+	end
+	return issue_types_map, project_issue
 end
 
 end

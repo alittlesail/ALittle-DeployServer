@@ -260,18 +260,16 @@ public await static HandleReSharperCodeCheckWorker(ALittle.IWorkerCommon sender,
     }
 
     // 添加执行文件
-    var cmd = "\""..detail.r2r_resharper_exe_path.."\"";
+    var cmd = detail.r2r_resharper_exe_path;
     // 添加缓存路径
-    cmd = cmd.." --caches-home=\""..detail.r2r_resharper_cache_path.."\"";
+    cmd = cmd.." --caches-home="..detail.r2r_resharper_cache_path;
     // 添加输出路径
     var output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path);
-    cmd = cmd.." -o=\""..output_path.."report.xml\"";
+    cmd = cmd.." -o="..output_path.."report.xml";
     // 指定格式
     cmd = cmd.." -f=Xml";
-    // 处理的制定文件
-    cmd = cmd.." \""..detail.r2r_resharper_sln_path.."\"";
-    cmd = cmd..detail.batch_cmd.." "..detail.batch_param;
-    ALittle.Log(cmd);
+    // 处理的指定文件
+    cmd = cmd.." "..detail.r2r_resharper_sln_path;
     var file = lua.io.popen(cmd, "rb");
     assert (file != null, "命令执行失败:"..cmd);
 
@@ -283,17 +281,152 @@ public await static HandleReSharperCodeCheckWorker(ALittle.IWorkerCommon sender,
     return rsp;
 }
 
-public struct QSubmitRedmine
+public struct QRedmineDeleteIssuesAssignedToMe
 {
-    JobInfoDetail detail;
+    string curl_exe_path;
+    string url;
+    string account;
+    string password;
+    string project_id;
 }
 
-public struct ASubmitRedmine
+public struct ARedmineDeleteIssuesAssignedToMe
+{
+}
+
+public struct RedmineListIssuesField
+{
+    int id;
+    string name;
+}
+
+public struct RedmineListIssuesInfo
+{
+    int id;	// 任务唯一ID
+    string subject;	// 标题
+    string description; // 描述
+
+    RedmineListIssuesField project;
+    RedmineListIssuesField tracker;
+    RedmineListIssuesField status;
+    RedmineListIssuesField priority;
+    RedmineListIssuesField author;
+    RedmineListIssuesField assigned_to;
+    RedmineListIssuesField fixed_version;
+}
+
+public struct RedmineListIssuesResponse
+{
+    List<RedmineListIssuesInfo> issues;
+    int total_count;
+    int offset;
+    int limit;
+}
+
+[Worker]
+public await static HandleRedmineDeleteIssuesAssignedToMeWorker(ALittle.IWorkerCommon sender, QRedmineDeleteIssuesAssignedToMe msg) : ARedmineDeleteIssuesAssignedToMe
+{
+    // 检查curl.exe是否存在
+    {
+        var attr = ALittle.File_GetFileAttr(msg.curl_exe_path);
+	    assert (attr != null && !attr.directory, "curl工具不存在");
+    }
+
+    var issues_map = new Map<int, bool>();
+
+    // 获取指派给的项目
+    var list_issues:RedmineListIssuesResponse;
+    while (true)
+    {
+        var cmd = msg.curl_exe_path;
+        cmd = cmd.." \""..msg.url.."/issues.json?assigned_to_id=me&project_id="..msg.project_id.."\"";
+        cmd = cmd.." -u "..msg.account..":"..msg.password;
+        var file = lua.io.popen(cmd, "rb");
+        assert (file != null, "命令执行失败:"..cmd);
+
+        var content = file.read("*a");
+        var result, error, status = file.close();
+        assert(result, error);
+        assert (content, "curl返回值内容为空");
+
+        error, list_issues = tcall(ALittle.String_JsonDecode, content);
+        assert(result, "curl返回值json解析失败");
+
+        if (list_issues.issues == null || ALittle.List_Len(list_issues.issues) == 0) break;
+
+        // 开始遍历删除
+        for (var index, issue in list_issues.issues)
+        {
+            assert (issues_map[issue.id] == null, "任务单删除失败:"..issue.id);
+            issues_map[issue.id] = true;
+
+            var delete_cmd = msg.curl_exe_path;
+            delete_cmd = delete_cmd.." "..msg.url.."/issues/"..issue.id..".json";
+            delete_cmd = delete_cmd.." -u "..msg.account..":"..msg.password;
+            delete_cmd = delete_cmd.." -X DELETE";
+            lua.os.execute(delete_cmd);
+        }
+    }
+
+    return new ARedmineDeleteIssuesAssignedToMe();
+}
+
+public struct RedmineCreateIssueInfoDetail
+{
+    int project_id;
+    string subject;
+    string description;
+    int priority_id; // 填2就可以了
+    int assigned_to_id;
+    List<int> watcher_user_ids;
+}
+
+public struct RedmineCreateIssueInfo
+{
+    RedmineCreateIssueInfoDetail issue;
+}
+
+public struct QRedmineCreateIssue
+{
+    RedmineCreateIssueInfo info;
+
+    string curl_exe_path;
+    string url;
+    string account;
+    string password;
+}
+
+public struct ARedmineCreateIssue
 {
 }
 
 [Worker]
-public await static HandleSubmitRedmineWorker(ALittle.IWorkerCommon sender, QSubmitRedmine msg) : ASubmitRedmine
+public await static HandleRedmineCreateIssueWorker(ALittle.IWorkerCommon sender, QRedmineCreateIssue msg) : ARedmineCreateIssue
 {
-    return new ASubmitRedmine();
+    // 检查curl.exe是否存在
+    {
+        var attr = ALittle.File_GetFileAttr(msg.curl_exe_path);
+	    assert (attr != null && !attr.directory, "curl工具不存在");
+    }
+
+    // 获取指派给的项目
+    {
+        var cmd = msg.curl_exe_path;
+        cmd = cmd.." "..msg.url.."/issues.json";
+        cmd = cmd.." -u "..msg.account..":"..msg.password;
+        cmd = cmd.." -X POST";
+        cmd = cmd.." -H \"Content-Type: application/json\"";
+        cmd = cmd.." -d \""..ALittle.String_Replace(ALittle.String_JsonEncode(msg.info), "\"", "\\\"").."\"";
+        ALittle.Log(cmd);
+        var file = lua.io.popen(cmd, "rb");
+        assert (file != null, "命令执行失败:"..cmd);
+
+        var content = file.read("*a");
+        var result, error, status = file.close();
+        assert(result, error);
+        
+        ALittle.Log(content);
+    }
+
+    return new ARedmineCreateIssue();
 }
