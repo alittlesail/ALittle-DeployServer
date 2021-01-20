@@ -284,6 +284,7 @@ function DeployServer.HandleReSharperCodeCheckWorker(sender, msg)
 	cmd = cmd .. " -f=Xml"
 	cmd = cmd .. " \"" .. detail.r2r_resharper_sln_path .. "\""
 	cmd = cmd .. detail.batch_cmd .. " " .. detail.batch_param
+	ALittle.Log(cmd)
 	local file = io.popen(cmd, "rb")
 	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
 	local rsp = {}

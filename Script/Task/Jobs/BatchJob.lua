@@ -16,6 +16,9 @@ function DeployServer.BatchJob:Execute(build_info)
 	local msg = {}
 	msg.detail = self._info.detail
 	local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-1431809884, DeployServer.g_JobWorker, msg)
+	if error ~= nil then
+		return error, nil
+	end
 	return error, rsp.content .. "\nexit_code:" .. rsp.exit_code
 end
 

@@ -9,6 +9,7 @@ protected class ReSharperRedmineJob : Job
             var msg = new QReSharperCodeCheck();
             msg.detail = this._info.detail;
             var error, rsp = HandleReSharperCodeCheckWorker(g_JobWorker, msg);
+            if (error != null) return error, null;
             return error, rsp.content.."\nexit_code:"..rsp.exit_code;
         }
     }
