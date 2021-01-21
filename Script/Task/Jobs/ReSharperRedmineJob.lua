@@ -9,8 +9,8 @@ local ___ipairs = ipairs
 
 ALittle.RegStruct(-1102617310, "DeployServer.ReSharperReportIssue", {
 name = "DeployServer.ReSharperReportIssue", ns_name = "DeployServer", rl_name = "ReSharperReportIssue", hash_code = -1102617310,
-name_list = {"type_id","file","offset_start","offset_end","line","message","account","project"},
-type_list = {"string","string","int","int","int","string","string","string"},
+name_list = {"type_id","file","offset_start","offset_end","line","message","account","project","level","severity"},
+type_list = {"string","string","int","int","int","string","string","string","int","string"},
 option_map = {}
 })
 
@@ -21,7 +21,7 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 	local ___COROUTINE = coroutine.running()
 	do
 	end
-	local issue_type, issue_map = self:AnalysisReport()
+	local issue_map = self:AnalysisReport()
 	do
 		local msg = {}
 		msg.curl_exe_path = self._info.detail.r2r_curl_exe_path
@@ -29,7 +29,7 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 		msg.account = self._info.detail.r2r_redmine_account
 		msg.password = self._info.detail.r2r_redmine_password
 		msg.project_id = self._info.detail.r2r_redmine_project_id
-		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-469603049, DeployServer.g_JobWorker, msg)
+		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1771504595, DeployServer.g_JobWorker, msg)
 		Lua.Assert(error == nil, error)
 	end
 	for project_name, issue_list in ___pairs(issue_map) do
@@ -43,7 +43,7 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 			local project_map = account_map[issue.account]
 			if project_map == nil then
 				project_map = {}
-				account_map[project_name] = project_map
+				account_map[issue.account] = project_map
 			end
 			local list = project_map[issue.project]
 			if list == nil then
@@ -59,35 +59,52 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 		local account = ""
 		for project_name, issue_list in ___pairs(project_map) do
 			count = count + 1
-			description[count] = "项目:" .. project_name
+			description[count] = "Project:" .. project_name
 			for index, issue in ___ipairs(issue_list) do
 				account = issue.account
-				local desc = "\tFile:" .. issue.file .. " Line:" .. issue.line .. " [" .. issue.offset_start .. ", " .. issue.offset_end .. "] Message:" .. issue.message
+				local desc = issue.severity .. " File:" .. issue.file .. " Line:" .. issue.line .. " Offset:" .. issue.offset_start .. "-" .. issue.offset_end .. " Message:" .. issue.message
 				count = count + 1
 				description[count] = desc
+				if count >= 50 then
+					break
+				end
+			end
+			if count >= 50 then
+				count = count + 1
+				description[count] = "=====too manay info, please handle above first.====="
+				break
 			end
 		end
 		local msg = {}
+		msg.curl_exe_path = self._info.detail.r2r_curl_exe_path
 		msg.url = self._info.detail.r2r_redmine_url
 		msg.account = self._info.detail.r2r_redmine_account
 		msg.password = self._info.detail.r2r_redmine_password
+		local info = {}
 		local detail = {}
-		msg.info = {}
-		msg.info.issue = detail
+		info.issue = detail
 		local watcher_id = self._info.detail.r2r_redmine_account_map[account]
 		if watcher_id ~= nil then
 			detail.watcher_user_ids = {}
 			detail.watcher_user_ids[1] = watcher_id
 		end
 		detail.project_id = ALittle.Math_ToInt(self._info.detail.r2r_redmine_project_id)
-		detail.subject = "代码检查"
+		detail.subject = "DeployServer:CodeCheck"
 		detail.assigned_to_id = ALittle.Math_ToInt(self._info.detail.r2r_redmine_account_id)
 		detail.priority_id = 2
 		detail.description = ALittle.String_Join(description, "\r\n")
+		msg.json_path = ALittle.File_PathEndWithSplit(self._info.detail.r2r_resharper_output_path) .. self._task.data_info.task_id .. ".json"
+		local save_result = ALittle.File_WriteTextToStdFile(ALittle.String_JsonEncode(info), msg.json_path)
+		Lua.Assert(save_result, "Json信息保存失败:" .. msg.json_path)
 		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1709573174, DeployServer.g_JobWorker, msg)
+		ALittle.File_DeleteFile(msg.json_path)
 		Lua.Assert(error == nil, error)
 	end
 	return nil, nil
+end
+
+function DeployServer.ReSharperRedmineJob.IssueItemSort(a, b)
+	return a.level > b.level
 end
 
 function DeployServer.ReSharperRedmineJob:AnalysisReport()
@@ -98,6 +115,7 @@ function DeployServer.ReSharperRedmineJob:AnalysisReport()
 	local root = xml:RootElement()
 	Lua.Assert(root, "xml报告文件没有跟节点")
 	local issue_types_map = {}
+	local issue_level_map = {}
 	local issue_types = root:FindElement("IssueTypes")
 	if issue_types ~= nil then
 		local issue_child = issue_types:FirstChild()
@@ -108,6 +126,17 @@ function DeployServer.ReSharperRedmineJob:AnalysisReport()
 				local severity_attr = issue_element:Attribute("Severity")
 				if id_attr ~= nil and severity_attr ~= nil then
 					issue_types_map[id_attr] = severity_attr
+					if severity_attr == "INFO" then
+						issue_level_map[id_attr] = 0
+					elseif severity_attr == "HINT" then
+						issue_level_map[id_attr] = 1
+					elseif severity_attr == "SUGGESTION" then
+						issue_level_map[id_attr] = 2
+					elseif severity_attr == "WARNING" then
+						issue_level_map[id_attr] = 3
+					elseif severity_attr == "ERROR" then
+						issue_level_map[id_attr] = 4
+					end
 				end
 			end
 			issue_child = issue_child:NextSibling()
@@ -130,6 +159,8 @@ function DeployServer.ReSharperRedmineJob:AnalysisReport()
 						if p_issue_element ~= nil then
 							local info = {}
 							info.type_id = p_issue_element:Attribute("TypeId")
+							info.level = issue_level_map[info.type_id]
+							info.severity = issue_types_map[info.type_id]
 							info.file = p_issue_element:Attribute("File")
 							local offset = p_issue_element:Attribute("Offset")
 							local offset_list = ALittle.String_Split(offset, "-")
@@ -146,12 +177,13 @@ function DeployServer.ReSharperRedmineJob:AnalysisReport()
 						end
 						p_issue_child = p_issue_child:NextSibling()
 					end
+					ALittle.List_Sort(list, DeployServer.ReSharperRedmineJob.IssueItemSort)
 				end
 			end
 			issue_child = issue_child:NextSibling()
 		end
 	end
-	return issue_types_map, project_issue
+	return project_issue
 end
 
 end

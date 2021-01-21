@@ -267,7 +267,7 @@ public await static HandleReSharperCodeCheckWorker(ALittle.IWorkerCommon sender,
     var output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path);
     cmd = cmd.." -o="..output_path.."report.xml";
     // 指定格式
-    cmd = cmd.." -f=Xml";
+    cmd = cmd.." -f=Xml -a=True";
     // 处理的指定文件
     cmd = cmd.." "..detail.r2r_resharper_sln_path;
     var file = lua.io.popen(cmd, "rb");
@@ -281,7 +281,7 @@ public await static HandleReSharperCodeCheckWorker(ALittle.IWorkerCommon sender,
     return rsp;
 }
 
-public struct QRedmineDeleteIssuesAssignedToMe
+public struct QRedmineDeleteIssuesAssignedToSelf
 {
     string curl_exe_path;
     string url;
@@ -324,7 +324,7 @@ public struct RedmineListIssuesResponse
 }
 
 [Worker]
-public await static HandleRedmineDeleteIssuesAssignedToMeWorker(ALittle.IWorkerCommon sender, QRedmineDeleteIssuesAssignedToMe msg) : ARedmineDeleteIssuesAssignedToMe
+public await static HandleRedmineDeleteIssuesAssignedToSelfWorker(ALittle.IWorkerCommon sender, QRedmineDeleteIssuesAssignedToSelf msg) : ARedmineDeleteIssuesAssignedToMe
 {
     // 检查curl.exe是否存在
     {
@@ -388,12 +388,12 @@ public struct RedmineCreateIssueInfo
 
 public struct QRedmineCreateIssue
 {
-    RedmineCreateIssueInfo info;
-
     string curl_exe_path;
     string url;
     string account;
     string password;
+
+    string json_path;
 }
 
 public struct ARedmineCreateIssue
@@ -416,16 +416,13 @@ public await static HandleRedmineCreateIssueWorker(ALittle.IWorkerCommon sender,
         cmd = cmd.." -u "..msg.account..":"..msg.password;
         cmd = cmd.." -X POST";
         cmd = cmd.." -H \"Content-Type: application/json\"";
-        cmd = cmd.." -d \""..ALittle.String_Replace(ALittle.String_JsonEncode(msg.info), "\"", "\\\"").."\"";
-        ALittle.Log(cmd);
+        cmd = cmd.." --data-binary \"@"..msg.json_path.."\"";
         var file = lua.io.popen(cmd, "rb");
         assert (file != null, "命令执行失败:"..cmd);
 
         var content = file.read("*a");
         var result, error, status = file.close();
         assert(result, error);
-        
-        ALittle.Log(content);
     }
 
     return new ARedmineCreateIssue();

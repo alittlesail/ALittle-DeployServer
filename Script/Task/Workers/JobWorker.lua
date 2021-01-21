@@ -31,10 +31,16 @@ name_list = {},
 type_list = {},
 option_map = {}
 })
+ALittle.RegStruct(1771504595, "DeployServer.QRedmineDeleteIssuesAssignedToSelf", {
+name = "DeployServer.QRedmineDeleteIssuesAssignedToSelf", ns_name = "DeployServer", rl_name = "QRedmineDeleteIssuesAssignedToSelf", hash_code = 1771504595,
+name_list = {"curl_exe_path","url","account","password","project_id"},
+type_list = {"string","string","string","string","string"},
+option_map = {}
+})
 ALittle.RegStruct(1709573174, "DeployServer.QRedmineCreateIssue", {
 name = "DeployServer.QRedmineCreateIssue", ns_name = "DeployServer", rl_name = "QRedmineCreateIssue", hash_code = 1709573174,
-name_list = {"info","curl_exe_path","url","account","password"},
-type_list = {"DeployServer.RedmineCreateIssueInfo","string","string","string","string"},
+name_list = {"curl_exe_path","url","account","password","json_path"},
+type_list = {"string","string","string","string","string"},
 option_map = {}
 })
 ALittle.RegStruct(1447368920, "DeployServer.ACopyFileExecute", {
@@ -137,12 +143,6 @@ ALittle.RegStruct(-469603049, "DeployServer.ARedmineDeleteIssuesAssignedToMe", {
 name = "DeployServer.ARedmineDeleteIssuesAssignedToMe", ns_name = "DeployServer", rl_name = "ARedmineDeleteIssuesAssignedToMe", hash_code = -469603049,
 name_list = {},
 type_list = {},
-option_map = {}
-})
-ALittle.RegStruct(-469603049, "DeployServer.QRedmineDeleteIssuesAssignedToMe", {
-name = "DeployServer.QRedmineDeleteIssuesAssignedToMe", ns_name = "DeployServer", rl_name = "QRedmineDeleteIssuesAssignedToMe", hash_code = -469603049,
-name_list = {"curl_exe_path","url","account","password","project_id"},
-type_list = {"string","string","string","string","string"},
 option_map = {}
 })
 ALittle.RegStruct(-467409153, "DeployServer.QCopyFileExecute", {
@@ -323,7 +323,7 @@ function DeployServer.HandleReSharperCodeCheckWorker(sender, msg)
 	cmd = cmd .. " --caches-home=" .. detail.r2r_resharper_cache_path
 	local output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path)
 	cmd = cmd .. " -o=" .. output_path .. "report.xml"
-	cmd = cmd .. " -f=Xml"
+	cmd = cmd .. " -f=Xml -a=True"
 	cmd = cmd .. " " .. detail.r2r_resharper_sln_path
 	local file = io.popen(cmd, "rb")
 	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
@@ -336,7 +336,7 @@ function DeployServer.HandleReSharperCodeCheckWorker(sender, msg)
 end
 
 ALittle.RegWorkerRpcCallback(475800478, DeployServer.HandleReSharperCodeCheckWorker, 511985580)
-function DeployServer.HandleRedmineDeleteIssuesAssignedToMeWorker(sender, msg)
+function DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	do
 		local attr = ALittle.File_GetFileAttr(msg.curl_exe_path)
@@ -372,7 +372,7 @@ function DeployServer.HandleRedmineDeleteIssuesAssignedToMeWorker(sender, msg)
 	return {}
 end
 
-ALittle.RegWorkerRpcCallback(-469603049, DeployServer.HandleRedmineDeleteIssuesAssignedToMeWorker, -469603049)
+ALittle.RegWorkerRpcCallback(1771504595, DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker, -469603049)
 function DeployServer.HandleRedmineCreateIssueWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	do
@@ -385,14 +385,12 @@ function DeployServer.HandleRedmineCreateIssueWorker(sender, msg)
 		cmd = cmd .. " -u " .. msg.account .. ":" .. msg.password
 		cmd = cmd .. " -X POST"
 		cmd = cmd .. " -H \"Content-Type: application/json\""
-		cmd = cmd .. " -d \"" .. ALittle.String_Replace(ALittle.String_JsonEncode(msg.info), "\"", "\\\"") .. "\""
-		ALittle.Log(cmd)
+		cmd = cmd .. " --data-binary \"@" .. msg.json_path .. "\""
 		local file = io.popen(cmd, "rb")
 		Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
 		local content = file:read("*a")
 		local result, error, status = file:close()
 		Lua.Assert(result, error)
-		ALittle.Log(content)
 	end
 	return {}
 end

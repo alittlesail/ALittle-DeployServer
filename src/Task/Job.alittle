@@ -52,6 +52,7 @@ public struct JobInfoDetail
     string r2r_resharper_cache_path;	// resharper检查缓存路径
     string r2r_resharper_output_path;	// resharper检查输出路径
     string r2r_resharper_sln_path;		// resharper检查的工程文件
+    List<string> r2r_resharper_exclude_path; // 要排除的代码路径
     string r2r_redmine_url;			// redmine的地址
     string r2r_redmine_account;		// redmine的账号
     string r2r_redmine_password;		// redmine的密码

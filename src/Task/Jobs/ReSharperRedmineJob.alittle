@@ -11,8 +11,9 @@ public struct ReSharperReportIssue
     string message;		// 问题信息
     string account;	// 文件最后修改的账号
     string project;	// 项目名
+    int level;	// 警告等级
+    string severity; // 警告等级
 }
-
 
 protected class ReSharperRedmineJob : Job
 {
@@ -26,21 +27,18 @@ protected class ReSharperRedmineJob : Job
             //if (error != null) return error, null;
         }
 
-        // 解析报告
-        //var issue_types_map, project_issue = this.AnalysisReport();
-
         // 分析报告
-        var issue_type, issue_map = this.AnalysisReport();
+        var issue_map = this.AnalysisReport();
 
         // 删除redmine
         {
-            var msg = new QRedmineDeleteIssuesAssignedToMe();
+            var msg = new QRedmineDeleteIssuesAssignedToSelf();
             msg.curl_exe_path = this._info.detail.r2r_curl_exe_path;
             msg.url = this._info.detail.r2r_redmine_url;
             msg.account = this._info.detail.r2r_redmine_account;
             msg.password = this._info.detail.r2r_redmine_password;
             msg.project_id = this._info.detail.r2r_redmine_project_id;
-            var error, rsp = DeployServer.HandleRedmineDeleteIssuesAssignedToMeWorker(g_JobWorker, msg);
+            var error, rsp = DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker(g_JobWorker, msg);
             assert (error == null, error);
         }
 
@@ -63,7 +61,7 @@ protected class ReSharperRedmineJob : Job
                 if (project_map == null)
                 {
                     project_map = new Map<string, List<ReSharperReportIssue>>();
-                    account_map[project_name] = project_map;
+                    account_map[issue.account] = project_map;
                 }
                 var list = project_map[issue.project];
                 if (list == null)
@@ -84,25 +82,36 @@ protected class ReSharperRedmineJob : Job
             for (var project_name, issue_list in project_map)
             {
                 ++count;
-                description[count] = "项目:"..project_name;
+                description[count] = "Project:"..project_name;
                 for (var index, issue in issue_list)
                 {
                     account = issue.account;
 
-                    var desc = "\tFile:"..issue.file.." Line:"..issue.line.." ["..issue.offset_start..", "..issue.offset_end.."] Message:"..issue.message;
+                    var desc = issue.severity.." File:"..issue.file.." Line:"..issue.line.." Offset:"..issue.offset_start.."-"..issue.offset_end.." Message:"..issue.message;
 
                     ++count;
                     description[count] = desc;
+
+                    if (count >= 50) break;
+                }
+
+                if (count >= 50)
+                {
+                    ++count;
+                    description[count] = "=====too manay info, please handle above first.=====";
+                    break;
                 }
             }
 
             var msg = new QRedmineCreateIssue();
+            msg.curl_exe_path = this._info.detail.r2r_curl_exe_path;
             msg.url = this._info.detail.r2r_redmine_url;
             msg.account = this._info.detail.r2r_redmine_account;
             msg.password = this._info.detail.r2r_redmine_password;
+
+            var info = new RedmineCreateIssueInfo();
             var detail = new RedmineCreateIssueInfoDetail();
-            msg.info = new RedmineCreateIssueInfo();
-            msg.info.issue = detail;
+            info.issue = detail;
         
             // 获取映射
             var watcher_id = this._info.detail.r2r_redmine_account_map[account];
@@ -112,19 +121,28 @@ protected class ReSharperRedmineJob : Job
                 detail.watcher_user_ids[1] = watcher_id;
             }
             detail.project_id = ALittle.Math_ToInt(this._info.detail.r2r_redmine_project_id);
-            detail.subject = "代码检查";
+            detail.subject = "DeployServer:CodeCheck";
             detail.assigned_to_id = ALittle.Math_ToInt(this._info.detail.r2r_redmine_account_id);
             detail.priority_id = 2;
             detail.description = ALittle.String_Join(description, "\r\n");
 
+            msg.json_path = ALittle.File_PathEndWithSplit(this._info.detail.r2r_resharper_output_path)..this._task.data_info.task_id..".json";
+            var save_result = ALittle.File_WriteTextToStdFile(ALittle.String_JsonEncode(info), msg.json_path);
+            assert(save_result, "Json信息保存失败:"..msg.json_path);
             var error, rsp = DeployServer.HandleRedmineCreateIssueWorker(g_JobWorker, msg);
+            ALittle.File_DeleteFile(msg.json_path);
             assert(error == null, error);
         }
         
         return null, null;
     }
 
-    private fun AnalysisReport() : Map<string, string>, Map<string, List<ReSharperReportIssue>>
+    private static IssueItemSort(ReSharperReportIssue a, ReSharperReportIssue b) : bool
+    {
+        return a.level > b.level;
+    }
+
+    private fun AnalysisReport() : Map<string, List<ReSharperReportIssue>>
     {
         var detail = this._info.detail;
 
@@ -139,6 +157,7 @@ protected class ReSharperRedmineJob : Job
 
         // 问题类型映射优先级
         var issue_types_map = new Map<string, string>();
+        var issue_level_map = new Map<string, int>();
 
         // 获取问题类型列表
         var issue_types = root.FindElement("IssueTypes");
@@ -153,7 +172,19 @@ protected class ReSharperRedmineJob : Job
                     var id_attr = issue_element.Attribute("Id");
                     var severity_attr = issue_element.Attribute("Severity");
                     if (id_attr != null && severity_attr != null)
+                    {
                         issue_types_map[id_attr] = severity_attr;
+                        if (severity_attr == "INFO")
+                        	issue_level_map[id_attr] = 0;
+                        elseif (severity_attr == "HINT")
+                        	issue_level_map[id_attr] = 1;
+                        elseif (severity_attr == "SUGGESTION")
+                        	issue_level_map[id_attr] = 2;
+                        elseif (severity_attr == "WARNING")
+                        	issue_level_map[id_attr] = 3;
+                        elseif (severity_attr == "ERROR")
+                        	issue_level_map[id_attr] = 4;
+                    }                        
                 }
                 issue_child = issue_child.NextSibling();
             }
@@ -185,6 +216,8 @@ protected class ReSharperRedmineJob : Job
                             {
                                 var info = new ReSharperReportIssue();
                                 info.type_id = p_issue_element.Attribute("TypeId");
+                                info.level = issue_level_map[info.type_id];
+                                info.severity = issue_types_map[info.type_id];
                                 info.file = p_issue_element.Attribute("File");
                                 var offset = p_issue_element.Attribute("Offset");
                                 var offset_list = ALittle.String_Split(offset, "-");
@@ -197,12 +230,13 @@ protected class ReSharperRedmineJob : Job
                             }
                             p_issue_child = p_issue_child.NextSibling();
                         }
+                        ALittle.List_Sort(list, ReSharperRedmineJob.IssueItemSort);
                     }
                 }
                 issue_child = issue_child.NextSibling();
             }
         }
 
-        return issue_types_map, project_issue;
+        return project_issue;
     }
 }
