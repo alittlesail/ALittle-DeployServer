@@ -76,7 +76,8 @@ type_list = {"int"},
 option_map = {}
 })
 
-DeployServer.g_JobWorker = nil
+DeployServer.g_LJobWorker = nil
+DeployServer.g_HJobWorker = nil
 DeployServer.TaskManager = Lua.Class(nil, "DeployServer.TaskManager")
 
 function DeployServer.TaskManager:Ctor()
@@ -99,7 +100,8 @@ function DeployServer.TaskManager:Setup()
 		end
 	end
 	A_WebAccountManager:AddEventListener(___all_struct[-1353883986], self, self.HandleAccountLogin)
-	DeployServer.g_JobWorker = ALittle.Worker(DeployServer.g_ModuleScriptPath .. "Task/Workers/JobWorker")
+	DeployServer.g_LJobWorker = ALittle.Worker(DeployServer.g_ModuleScriptPath .. "Task/Workers/JobWorker")
+	DeployServer.g_HJobWorker = ALittle.Worker(DeployServer.g_ModuleScriptPath .. "Task/Workers/JobWorker")
 end
 
 function DeployServer.TaskManager:HandleAccountLogin(event)
@@ -172,9 +174,13 @@ function DeployServer.TaskManager:StartTaskByWebHook(url)
 end
 
 function DeployServer.TaskManager:Shutdown()
-	if DeployServer.g_JobWorker ~= nil then
-		DeployServer.g_JobWorker:Stop()
-		DeployServer.g_JobWorker = nil
+	if DeployServer.g_LJobWorker ~= nil then
+		DeployServer.g_LJobWorker:Stop()
+		DeployServer.g_LJobWorker = nil
+	end
+	if DeployServer.g_HJobWorker ~= nil then
+		DeployServer.g_HJobWorker:Stop()
+		DeployServer.g_HJobWorker = nil
 	end
 end
 

@@ -7,7 +7,7 @@ protected class BatchJob : Job
     {
         var msg = new QBatchExecute();
         msg.detail = this._info.detail;
-        var error, rsp = HandleBatchWorker(g_JobWorker, msg);
+        var error, rsp = HandleBatchWorker(g_LJobWorker, msg);
         if (error != null) return error, null;
         return error, rsp.content.."\nexit_code:"..rsp.exit_code;
     }

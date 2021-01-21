@@ -1,7 +1,8 @@
 
 namespace DeployServer;
 
-protected var g_JobWorker:ALittle.IWorkerCommon;
+protected var g_LJobWorker:ALittle.IWorkerCommon;
+protected var g_HJobWorker:ALittle.IWorkerCommon;
 
 public class TaskManager
 {
@@ -28,7 +29,8 @@ public class TaskManager
 
         A_WebAccountManager.AddEventListener(this, this.HandleAccountLogin);
 
-        g_JobWorker = new ALittle.Worker(g_ModuleScriptPath.."Task/Workers/JobWorker");
+        g_LJobWorker = new ALittle.Worker(g_ModuleScriptPath.."Task/Workers/JobWorker");
+        g_HJobWorker = new ALittle.Worker(g_ModuleScriptPath.."Task/Workers/JobWorker");
     }
 
     private fun HandleAccountLogin(ALittle.WebAccountLoginEvent event)
@@ -113,10 +115,16 @@ public class TaskManager
 
     public fun Shutdown()
     {
-        if (g_JobWorker != null)
+        if (g_LJobWorker != null)
         {
-            g_JobWorker.Stop();
-            g_JobWorker = null;
+            g_LJobWorker.Stop();
+            g_LJobWorker = null;
+        }
+
+        if (g_HJobWorker != null)
+        {
+            g_HJobWorker.Stop();
+            g_HJobWorker = null;
         }
     }
 }

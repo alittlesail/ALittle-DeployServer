@@ -21,10 +21,10 @@ protected class ReSharperRedmineJob : Job
     {
         // 解析代码出现报告
         {
-        //    var msg = new QReSharperCodeCheck();
-            //    msg.detail = this._info.detail;
-            //    var error, rsp = HandleReSharperCodeCheckWorker(g_JobWorker, msg);
-            //if (error != null) return error, null;
+            var msg = new QReSharperCodeCheck();
+            msg.detail = this._info.detail;
+            var error, rsp = HandleReSharperCodeCheckWorker(g_HJobWorker, msg);
+        	if (error != null) return error, null;
         }
 
         // 分析报告
@@ -38,7 +38,7 @@ protected class ReSharperRedmineJob : Job
             msg.account = this._info.detail.r2r_redmine_account;
             msg.password = this._info.detail.r2r_redmine_password;
             msg.project_id = this._info.detail.r2r_redmine_project_id;
-            var error, rsp = DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker(g_JobWorker, msg);
+            var error, rsp = DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker(g_HJobWorker, msg);
             assert (error == null, error);
         }
 
@@ -129,7 +129,7 @@ protected class ReSharperRedmineJob : Job
             msg.json_path = ALittle.File_PathEndWithSplit(this._info.detail.r2r_resharper_output_path)..this._task.data_info.task_id..".json";
             var save_result = ALittle.File_WriteTextToStdFile(ALittle.String_JsonEncode(info), msg.json_path);
             assert(save_result, "Json信息保存失败:"..msg.json_path);
-            var error, rsp = DeployServer.HandleRedmineCreateIssueWorker(g_JobWorker, msg);
+            var error, rsp = DeployServer.HandleRedmineCreateIssueWorker(g_HJobWorker, msg);
             ALittle.File_DeleteFile(msg.json_path);
             assert(error == null, error);
         }

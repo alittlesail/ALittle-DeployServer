@@ -7,7 +7,7 @@ protected class CopyFileJob : Job
     {
         var msg = new QCopyFileExecute();
         msg.detail = this._info.detail;
-        var error, rsp = HandleCopyFileWorker(g_JobWorker, msg);
+        var error, rsp = HandleCopyFileWorker(g_LJobWorker, msg);
         return error, null;
     }
 }

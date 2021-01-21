@@ -7,7 +7,7 @@ protected class SendVirtualKeyJob : Job
     {
         var msg = new QSendVirtualKeyExecute();
         msg.detail = this._info.detail;
-        var error, rsp = HandleSendVirtualKeyWorker(g_JobWorker, msg);
+        var error, rsp = HandleSendVirtualKeyWorker(g_LJobWorker, msg);
         if (error != null) return error, null;
         return null, rsp.content;
     }

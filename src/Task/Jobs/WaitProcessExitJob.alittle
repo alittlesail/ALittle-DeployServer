@@ -7,7 +7,7 @@ protected class WaitProcessExitJob : Job
     {
         var msg = new QWaitProcessExitExecute();
         msg.detail = this._info.detail;
-        var error, rsp = HandleWaitProcessExitWorker(g_JobWorker, msg);
+        var error, rsp = HandleWaitProcessExitWorker(g_LJobWorker, msg);
         return error, null;
     }
 }

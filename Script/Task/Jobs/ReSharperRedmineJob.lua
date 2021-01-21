@@ -20,6 +20,12 @@ DeployServer.ReSharperRedmineJob = Lua.Class(DeployServer.Job, "DeployServer.ReS
 function DeployServer.ReSharperRedmineJob:Execute(build_info)
 	local ___COROUTINE = coroutine.running()
 	do
+		local msg = {}
+		msg.detail = self._info.detail
+		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(475800478, DeployServer.g_HJobWorker, msg)
+		if error ~= nil then
+			return error, nil
+		end
 	end
 	local issue_map = self:AnalysisReport()
 	do
@@ -29,7 +35,7 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 		msg.account = self._info.detail.r2r_redmine_account
 		msg.password = self._info.detail.r2r_redmine_password
 		msg.project_id = self._info.detail.r2r_redmine_project_id
-		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1771504595, DeployServer.g_JobWorker, msg)
+		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1771504595, DeployServer.g_HJobWorker, msg)
 		Lua.Assert(error == nil, error)
 	end
 	for project_name, issue_list in ___pairs(issue_map) do
@@ -96,7 +102,7 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 		msg.json_path = ALittle.File_PathEndWithSplit(self._info.detail.r2r_resharper_output_path) .. self._task.data_info.task_id .. ".json"
 		local save_result = ALittle.File_WriteTextToStdFile(ALittle.String_JsonEncode(info), msg.json_path)
 		Lua.Assert(save_result, "Json信息保存失败:" .. msg.json_path)
-		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1709573174, DeployServer.g_JobWorker, msg)
+		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1709573174, DeployServer.g_HJobWorker, msg)
 		ALittle.File_DeleteFile(msg.json_path)
 		Lua.Assert(error == nil, error)
 	end

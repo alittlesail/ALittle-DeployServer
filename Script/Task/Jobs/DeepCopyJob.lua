@@ -15,7 +15,7 @@ function DeployServer.DeepCopyJob:Execute(build_info)
 	local ___COROUTINE = coroutine.running()
 	local msg = {}
 	msg.detail = self._info.detail
-	local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-1351236611, DeployServer.g_JobWorker, msg)
+	local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-1351236611, DeployServer.g_LJobWorker, msg)
 	return error, nil
 end
 

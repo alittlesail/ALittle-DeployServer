@@ -15,7 +15,7 @@ function DeployServer.CopyFileJob:Execute(build_info)
 	local ___COROUTINE = coroutine.running()
 	local msg = {}
 	msg.detail = self._info.detail
-	local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-467409153, DeployServer.g_JobWorker, msg)
+	local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-467409153, DeployServer.g_LJobWorker, msg)
 	return error, nil
 end
 

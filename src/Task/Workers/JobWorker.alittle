@@ -268,6 +268,9 @@ public await static HandleReSharperCodeCheckWorker(ALittle.IWorkerCommon sender,
     cmd = cmd.." -o="..output_path.."report.xml";
     // 指定格式
     cmd = cmd.." -f=Xml -a=True";
+    // 指定配置文件
+    if (detail.r2r_resharper_dotsettings_path != "")
+    	cmd = cmd.." -p="..detail.r2r_resharper_dotsettings_path;
     // 处理的指定文件
     cmd = cmd.." "..detail.r2r_resharper_sln_path;
     var file = lua.io.popen(cmd, "rb");

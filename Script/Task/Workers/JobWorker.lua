@@ -324,6 +324,9 @@ function DeployServer.HandleReSharperCodeCheckWorker(sender, msg)
 	local output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path)
 	cmd = cmd .. " -o=" .. output_path .. "report.xml"
 	cmd = cmd .. " -f=Xml -a=True"
+	if detail.r2r_resharper_dotsettings_path ~= "" then
+		cmd = cmd .. " -p=" .. detail.r2r_resharper_dotsettings_path
+	end
 	cmd = cmd .. " " .. detail.r2r_resharper_sln_path
 	local file = io.popen(cmd, "rb")
 	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)

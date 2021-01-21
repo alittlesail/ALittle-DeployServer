@@ -7,7 +7,7 @@ protected class CreateProcessJob : Job
     {
         var msg = new QCreateProgressExecute();
         msg.detail = this._info.detail;
-        var error, rsp = HandleCreateProgressWorker(g_JobWorker, msg);
+        var error, rsp = HandleCreateProgressWorker(g_LJobWorker, msg);
         return error, null;
     }
 }

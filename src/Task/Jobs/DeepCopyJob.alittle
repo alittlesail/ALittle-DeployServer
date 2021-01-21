@@ -7,7 +7,7 @@ protected class DeepCopyJob : Job
     {
         var msg = new QDeepCopyExecute();
         msg.detail = this._info.detail;
-        var error, rsp = HandleDeepCopyWorker(g_JobWorker, msg);
+        var error, rsp = HandleDeepCopyWorker(g_LJobWorker, msg);
         return error, null;
     }
 }
