@@ -464,6 +464,7 @@ public await static HandleGitFileAuthorWorker(ALittle.IWorkerCommon sender, QGit
 
     var rsp = new AGitFileAuthor();
     rsp.account = file.read("*a");
+    ALittle.Log("git test:"..rsp.account);
     var result, error, status = file.close();
     assert(result, error);
 
@@ -509,7 +510,7 @@ public await static HandleSvnFileAuthorWorker(ALittle.IWorkerCommon sender, QSvn
         if (ALittle.String_Find(info, pre) != null)
         {
             rsp.account = ALittle.String_Sub(info, ALittle.String_Len(pre) + 1);
-            ALittle.Log(content);
+            ALittle.Log("svn test:"..rsp.account);
             break;
         }
     }

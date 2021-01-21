@@ -443,6 +443,7 @@ function DeployServer.HandleGitFileAuthorWorker(sender, msg)
 	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
 	local rsp = {}
 	rsp.account = file:read("*a")
+	ALittle.Log("git test:" .. rsp.account)
 	local result, error, status = file:close()
 	Lua.Assert(result, error)
 	return rsp
@@ -473,7 +474,7 @@ function DeployServer.HandleSvnFileAuthorWorker(sender, msg)
 	for _, info in ___ipairs(list) do
 		if ALittle.String_Find(info, pre) ~= nil then
 			rsp.account = ALittle.String_Sub(info, ALittle.String_Len(pre) + 1)
-			ALittle.Log(content)
+			ALittle.Log("svn test:" .. rsp.account)
 			break
 		end
 	end
