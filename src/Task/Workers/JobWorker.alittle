@@ -367,7 +367,11 @@ public await static HandleRedmineDeleteIssuesAssignedToSelfWorker(ALittle.IWorke
             delete_cmd = delete_cmd.." "..msg.url.."/issues/"..issue.id..".json";
             delete_cmd = delete_cmd.." -u "..msg.account..":"..msg.password;
             delete_cmd = delete_cmd.." -X DELETE";
-            lua.os.execute(delete_cmd);
+            file = lua.io.popen(delete_cmd, "rb");
+            assert (file != null, "命令执行失败:"..delete_cmd);
+            content = file.read("*a");
+            result, error, status = file.close();
+            assert(result, error);
         }
     }
 

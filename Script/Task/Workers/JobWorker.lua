@@ -369,7 +369,11 @@ function DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker(sender, msg)
 			delete_cmd = delete_cmd .. " " .. msg.url .. "/issues/" .. issue.id .. ".json"
 			delete_cmd = delete_cmd .. " -u " .. msg.account .. ":" .. msg.password
 			delete_cmd = delete_cmd .. " -X DELETE"
-			os.execute(delete_cmd)
+			file = io.popen(delete_cmd, "rb")
+			Lua.Assert(file ~= nil, "命令执行失败:" .. delete_cmd)
+			content = file:read("*a")
+			result, error, status = file:close()
+			Lua.Assert(result, error)
 		end
 	end
 	return {}
