@@ -443,7 +443,6 @@ function DeployServer.HandleGitFileAuthorWorker(sender, msg)
 	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
 	local rsp = {}
 	rsp.account = file:read("*a")
-	ALittle.Log("git test:" .. rsp.account)
 	local result, error, status = file:close()
 	Lua.Assert(result, error)
 	return rsp
@@ -467,7 +466,6 @@ function DeployServer.HandleSvnFileAuthorWorker(sender, msg)
 	local content = file:read("*a")
 	local result, error, status = file:close()
 	Lua.Assert(result, error)
-	ALittle.Log(content)
 	local rsp = {}
 	local list = ALittle.String_SplitSepList(content, {"\r", "\n"})
 	local pre = "Last Changed Author: "

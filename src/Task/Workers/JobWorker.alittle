@@ -464,7 +464,6 @@ public await static HandleGitFileAuthorWorker(ALittle.IWorkerCommon sender, QGit
 
     var rsp = new AGitFileAuthor();
     rsp.account = file.read("*a");
-    ALittle.Log("git test:"..rsp.account);
     var result, error, status = file.close();
     assert(result, error);
 
@@ -501,7 +500,6 @@ public await static HandleSvnFileAuthorWorker(ALittle.IWorkerCommon sender, QSvn
     var result, error, status = file.close();
     assert(result, error);
 
-    ALittle.Log(content);
     var rsp = new ASvnFileAuthor();
     var list = ALittle.String_SplitSepList(content, ["\r","\n"]);
     var pre = "Last Changed Author: ";
