@@ -109,10 +109,22 @@ name_list = {"issues","total_count","offset","limit"},
 type_list = {"List<DeployServer.RedmineListIssuesInfo>","int","int","int"},
 option_map = {}
 })
+ALittle.RegStruct(-937108191, "DeployServer.QGitFileAuthor", {
+name = "DeployServer.QGitFileAuthor", ns_name = "DeployServer", rl_name = "QGitFileAuthor", hash_code = -937108191,
+name_list = {"file_path"},
+type_list = {"string"},
+option_map = {}
+})
 ALittle.RegStruct(-876622592, "DeployServer.ADeepCopyExecute", {
 name = "DeployServer.ADeepCopyExecute", ns_name = "DeployServer", rl_name = "ADeepCopyExecute", hash_code = -876622592,
 name_list = {},
 type_list = {},
+option_map = {}
+})
+ALittle.RegStruct(-764967408, "DeployServer.AGitFileAuthor", {
+name = "DeployServer.AGitFileAuthor", ns_name = "DeployServer", rl_name = "AGitFileAuthor", hash_code = -764967408,
+name_list = {"account"},
+type_list = {"string"},
 option_map = {}
 })
 ALittle.RegStruct(578143414, "DeployServer.ASendVirtualKeyExecute", {
@@ -151,10 +163,22 @@ name_list = {"detail"},
 type_list = {"DeployServer.JobInfoDetail"},
 option_map = {}
 })
+ALittle.RegStruct(441047614, "DeployServer.QSvnFileAuthor", {
+name = "DeployServer.QSvnFileAuthor", ns_name = "DeployServer", rl_name = "QSvnFileAuthor", hash_code = 441047614,
+name_list = {"file_path"},
+type_list = {"string"},
+option_map = {}
+})
 ALittle.RegStruct(147809501, "DeployServer.RedmineCreateIssueInfo", {
 name = "DeployServer.RedmineCreateIssueInfo", ns_name = "DeployServer", rl_name = "RedmineCreateIssueInfo", hash_code = 147809501,
 name_list = {"issue"},
 type_list = {"DeployServer.RedmineCreateIssueInfoDetail"},
+option_map = {}
+})
+ALittle.RegStruct(-84518889, "DeployServer.ASvnFileAuthor", {
+name = "DeployServer.ASvnFileAuthor", ns_name = "DeployServer", rl_name = "ASvnFileAuthor", hash_code = -84518889,
+name_list = {"account"},
+type_list = {"string"},
 option_map = {}
 })
 
@@ -403,4 +427,58 @@ function DeployServer.HandleRedmineCreateIssueWorker(sender, msg)
 end
 
 ALittle.RegWorkerRpcCallback(1709573174, DeployServer.HandleRedmineCreateIssueWorker, 1775571742)
+function DeployServer.HandleGitFileAuthorWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local cmd = ""
+	local dir = ALittle.File_GetFilePathByPath(msg.file_path)
+	local index = ALittle.String_Find(dir, ":")
+	if index ~= nil then
+		cmd = cmd .. ALittle.String_Sub(dir, 1, index) .. " && "
+	end
+	if index ~= ALittle.String_Len(dir) then
+		cmd = cmd .. "cd \"" .. dir .. "\" && "
+	end
+	cmd = cmd .. "git log -1 --pretty=format:\"%an\" " .. msg.file_path
+	local file = io.popen(cmd, "rb")
+	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
+	local rsp = {}
+	rsp.account = file:read("*a")
+	local result, error, status = file:close()
+	Lua.Assert(result, error)
+	return rsp
+end
+
+ALittle.RegWorkerRpcCallback(-937108191, DeployServer.HandleGitFileAuthorWorker, -764967408)
+function DeployServer.HandleSvnFileAuthorWorker(sender, msg)
+	local ___COROUTINE = coroutine.running()
+	local cmd = ""
+	local dir = ALittle.File_GetFilePathByPath(msg.file_path)
+	local index = ALittle.String_Find(dir, ":")
+	if index ~= nil then
+		cmd = cmd .. ALittle.String_Sub(dir, 1, index) .. " && "
+	end
+	if index ~= ALittle.String_Len(dir) then
+		cmd = cmd .. "cd \"" .. dir .. "\" && "
+	end
+	cmd = cmd .. "svn info " .. msg.file_path
+	local file = io.popen(cmd, "rb")
+	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
+	local content = file:read("*a")
+	local result, error, status = file:close()
+	Lua.Assert(result, error)
+	ALittle.Log(content)
+	local rsp = {}
+	local list = ALittle.String_SplitSepList(content, {"\r", "\n"})
+	local pre = "Last Changed Author: "
+	for _, info in ___ipairs(list) do
+		if ALittle.String_Find(info, pre) ~= nil then
+			rsp.account = ALittle.String_Sub(info, ALittle.String_Len(pre) + 1)
+			ALittle.Log(content)
+			break
+		end
+	end
+	return rsp
+end
+
+ALittle.RegWorkerRpcCallback(441047614, DeployServer.HandleSvnFileAuthorWorker, -84518889)
 end

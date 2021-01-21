@@ -36,11 +36,28 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 		msg.password = self._info.detail.r2r_redmine_password
 		msg.project_id = self._info.detail.r2r_redmine_project_id
 		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1771504595, DeployServer.g_HJobWorker, msg)
-		Lua.Assert(error == nil, error)
+		if error ~= nil then
+			return error, nil
+		end
 	end
+	local code_tool = self._info.detail.r2r_code_tool
 	for project_name, issue_list in ___pairs(issue_map) do
 		for index, issue in ___ipairs(issue_list) do
-			issue.account = ""
+			if code_tool == "svn" then
+				local msg = {}
+				msg.file_path = issue.file
+				local error, rsp = ALittle.IWorkerCommon.InvokeRPC(441047614, DeployServer.g_LJobWorker, msg)
+				Lua.Assert(error ~= nil, error)
+				issue.account = rsp.account
+			elseif code_tool == "git" then
+				local msg = {}
+				msg.file_path = issue.file
+				local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-937108191, DeployServer.g_LJobWorker, msg)
+				Lua.Assert(error ~= nil, error)
+				issue.account = rsp.account
+			else
+				issue.account = ""
+			end
 		end
 	end
 	local account_map = {}
@@ -104,7 +121,9 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 		Lua.Assert(save_result, "Json信息保存失败:" .. msg.json_path)
 		local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1709573174, DeployServer.g_HJobWorker, msg)
 		ALittle.File_DeleteFile(msg.json_path)
-		Lua.Assert(error == nil, error)
+		if error ~= nil then
+			return error, nil
+		end
 	end
 	return nil, nil
 end

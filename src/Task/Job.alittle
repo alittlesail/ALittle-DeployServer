@@ -60,6 +60,7 @@ public struct JobInfoDetail
     string r2r_redmine_account_id;	//  账号ID
     Map<string, int> r2r_redmine_account_map;	// 账号和id的映射
     string r2r_curl_exe_path;		// curl工具的文件路径
+    string r2r_code_tool;
 }
 
 protected struct JobInfo

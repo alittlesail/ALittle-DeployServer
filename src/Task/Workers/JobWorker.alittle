@@ -434,3 +434,85 @@ public await static HandleRedmineCreateIssueWorker(ALittle.IWorkerCommon sender,
 
     return new ARedmineCreateIssue();
 }
+
+
+public struct QGitFileAuthor
+{
+    string file_path;
+}
+
+public struct AGitFileAuthor
+{
+    string account;
+}
+
+[Worker]
+public await static HandleGitFileAuthorWorker(ALittle.IWorkerCommon sender, QGitFileAuthor msg) : AGitFileAuthor
+{
+    var cmd = "";
+    var dir = ALittle.File_GetFilePathByPath(msg.file_path);
+
+    var index = ALittle.String_Find(dir, ":");
+    if (index != null)
+        cmd = cmd..ALittle.String_Sub(dir, 1, index).." && ";
+    if (index != ALittle.String_Len(dir))
+    	cmd = cmd.."cd \""..dir.."\" && ";
+
+    cmd = cmd.."git log -1 --pretty=format:\"%an\" "..msg.file_path;
+    var file = lua.io.popen(cmd, "rb");
+    assert (file != null, "命令执行失败:"..cmd);
+
+    var rsp = new AGitFileAuthor();
+    rsp.account = file.read("*a");
+    var result, error, status = file.close();
+    assert(result, error);
+
+    return rsp;
+}
+
+public struct QSvnFileAuthor
+{
+    string file_path;
+}
+
+public struct ASvnFileAuthor
+{
+    string account;
+}
+
+[Worker]
+public await static HandleSvnFileAuthorWorker(ALittle.IWorkerCommon sender, QSvnFileAuthor msg) : ASvnFileAuthor
+{
+    var cmd = "";
+    var dir = ALittle.File_GetFilePathByPath(msg.file_path);
+
+    var index = ALittle.String_Find(dir, ":");
+    if (index != null)
+        cmd = cmd..ALittle.String_Sub(dir, 1, index).." && ";
+    if (index != ALittle.String_Len(dir))
+    	cmd = cmd.."cd \""..dir.."\" && ";
+
+    cmd = cmd.."svn info "..msg.file_path;
+    var file = lua.io.popen(cmd, "rb");
+    assert (file != null, "命令执行失败:"..cmd);
+
+    var content = file.read("*a");
+    var result, error, status = file.close();
+    assert(result, error);
+
+    ALittle.Log(content);
+    var rsp = new ASvnFileAuthor();
+    var list = ALittle.String_SplitSepList(content, ["\r","\n"]);
+    var pre = "Last Changed Author: ";
+    for (var _, info in list)
+    {
+        if (ALittle.String_Find(info, pre) != null)
+        {
+            rsp.account = ALittle.String_Sub(info, ALittle.String_Len(pre) + 1);
+            ALittle.Log(content);
+            break;
+        }
+    }
+
+    return rsp;
+}

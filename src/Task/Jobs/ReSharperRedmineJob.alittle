@@ -39,15 +39,34 @@ protected class ReSharperRedmineJob : Job
             msg.password = this._info.detail.r2r_redmine_password;
             msg.project_id = this._info.detail.r2r_redmine_project_id;
             var error, rsp = DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker(g_HJobWorker, msg);
-            assert (error == null, error);
+        	if (error != null) return error, null;
         }
+
+        var code_tool = this._info.detail.r2r_code_tool;
 
         // 根据每个报告查找对应的最后修改账号
         for (var project_name, issue_list in issue_map)
         {
             for (var index, issue in issue_list)
             {
-                issue.account = "";
+                if (code_tool == "svn")
+                {
+                    var msg = new QSvnFileAuthor();
+                    msg.file_path = issue.file;
+                    var error, rsp = DeployServer.HandleSvnFileAuthorWorker(g_LJobWorker, msg);
+                    assert (error != null, error);
+                    issue.account = rsp.account;
+                }
+                elseif (code_tool == "git")
+                {
+                    var msg = new QGitFileAuthor();
+                    msg.file_path = issue.file;
+                    var error, rsp = DeployServer.HandleGitFileAuthorWorker(g_LJobWorker, msg);
+                    assert (error != null, error);
+                    issue.account = rsp.account;
+                }
+                else
+	                issue.account = "";
             }
         }
 
@@ -131,7 +150,7 @@ protected class ReSharperRedmineJob : Job
             assert(save_result, "Json信息保存失败:"..msg.json_path);
             var error, rsp = DeployServer.HandleRedmineCreateIssueWorker(g_HJobWorker, msg);
             ALittle.File_DeleteFile(msg.json_path);
-            assert(error == null, error);
+        	if (error != null) return error, null;
         }
         
         return null, null;
