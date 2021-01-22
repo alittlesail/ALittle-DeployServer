@@ -27,7 +27,10 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 			return error, nil
 		end
 	end
-	local issue_map = self:AnalysisReport()
+	local analysis_error, issue_map = self:AnalysisReport()
+	if analysis_error ~= nil then
+		return analysis_error, nil
+	end
 	do
 		local msg = {}
 		msg.curl_exe_path = self._info.detail.r2r_curl_exe_path
@@ -47,14 +50,20 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 				local msg = {}
 				msg.file_path = issue.file
 				local error, rsp = ALittle.IWorkerCommon.InvokeRPC(441047614, DeployServer.g_LJobWorker, msg)
-				Lua.Assert(error ~= nil, error)
-				issue.account = rsp.account
+				if error ~= nil then
+					issue.account = error
+				else
+					issue.account = rsp.account
+				end
 			elseif code_tool == "git" then
 				local msg = {}
 				msg.file_path = issue.file
 				local error, rsp = ALittle.IWorkerCommon.InvokeRPC(-937108191, DeployServer.g_LJobWorker, msg)
-				Lua.Assert(error ~= nil, error)
-				issue.account = rsp.account
+				if error ~= nil then
+					issue.account = error
+				else
+					issue.account = rsp.account
+				end
 			else
 				issue.account = ""
 			end
@@ -85,9 +94,8 @@ function DeployServer.ReSharperRedmineJob:Execute(build_info)
 			description[count] = "Project:" .. project_name
 			for index, issue in ___ipairs(issue_list) do
 				account = issue.account
-				local desc = issue.severity .. " File:" .. issue.file .. " Line:" .. issue.line .. " Offset:" .. issue.offset_start .. "-" .. issue.offset_end .. " Message:" .. issue.message
 				count = count + 1
-				description[count] = desc
+				description[count] = issue.severity .. " File:" .. issue.file .. " Line:" .. issue.line .. " Offset:" .. issue.offset_start .. "-" .. issue.offset_end .. " Message:" .. issue.message
 				if count >= 50 then
 					break
 				end
@@ -136,9 +144,13 @@ function DeployServer.ReSharperRedmineJob:AnalysisReport()
 	local detail = self._info.detail
 	local output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path) .. "report.xml"
 	local xml = tinyxml2.XMLDocument()
-	Lua.Assert(xml:LoadFile(output_path), "xml报告文件加载失败")
+	if not xml:LoadFile(output_path) then
+		return "xml报告文件加载失败:" .. output_path, nil
+	end
 	local root = xml:RootElement()
-	Lua.Assert(root, "xml报告文件没有跟节点")
+	if root == nil then
+		return "xml报告文件没有跟节点", nil
+	end
 	local issue_types_map = {}
 	local issue_level_map = {}
 	local issue_types = root:FindElement("IssueTypes")
@@ -208,7 +220,7 @@ function DeployServer.ReSharperRedmineJob:AnalysisReport()
 			issue_child = issue_child:NextSibling()
 		end
 	end
-	return project_issue
+	return nil, project_issue
 end
 
 end

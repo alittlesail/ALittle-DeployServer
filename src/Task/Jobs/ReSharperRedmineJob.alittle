@@ -28,7 +28,8 @@ protected class ReSharperRedmineJob : Job
         }
 
         // 分析报告
-        var issue_map = this.AnalysisReport();
+        var analysis_error, issue_map = this.AnalysisReport();
+        if (analysis_error != null) return analysis_error, null;
 
         // 删除redmine
         {
@@ -54,16 +55,16 @@ protected class ReSharperRedmineJob : Job
                     var msg = new QSvnFileAuthor();
                     msg.file_path = issue.file;
                     var error, rsp = DeployServer.HandleSvnFileAuthorWorker(g_LJobWorker, msg);
-                    assert (error != null, error);
-                    issue.account = rsp.account;
+                    if (error != null) issue.account = error;
+                    else issue.account = rsp.account;
                 }
                 elseif (code_tool == "git")
                 {
                     var msg = new QGitFileAuthor();
                     msg.file_path = issue.file;
                     var error, rsp = DeployServer.HandleGitFileAuthorWorker(g_LJobWorker, msg);
-                    assert (error != null, error);
-                    issue.account = rsp.account;
+                    if (error != null) issue.account = error;
+                    else issue.account = rsp.account;
                 }
                 else
 	                issue.account = "";
@@ -105,11 +106,8 @@ protected class ReSharperRedmineJob : Job
                 for (var index, issue in issue_list)
                 {
                     account = issue.account;
-
-                    var desc = issue.severity.." File:"..issue.file.." Line:"..issue.line.." Offset:"..issue.offset_start.."-"..issue.offset_end.." Message:"..issue.message;
-
                     ++count;
-                    description[count] = desc;
+                    description[count] = issue.severity.." File:"..issue.file.." Line:"..issue.line.." Offset:"..issue.offset_start.."-"..issue.offset_end.." Message:"..issue.message;
 
                     if (count >= 50) break;
                 }
@@ -161,7 +159,7 @@ protected class ReSharperRedmineJob : Job
         return a.level > b.level;
     }
 
-    private fun AnalysisReport() : Map<string, List<ReSharperReportIssue>>
+    private fun AnalysisReport() : string, Map<string, List<ReSharperReportIssue>>
     {
         var detail = this._info.detail;
 
@@ -169,10 +167,10 @@ protected class ReSharperRedmineJob : Job
         var output_path = ALittle.File_PathEndWithSplit(detail.r2r_resharper_output_path).."report.xml";
 
         var xml = new tinyxml2.XMLDocument();
-        assert(xml.LoadFile(output_path), "xml报告文件加载失败");
+        if (!xml.LoadFile(output_path)) return "xml报告文件加载失败:"..output_path, null;
 
         var root = xml.RootElement();
-        assert(root, "xml报告文件没有跟节点");
+        if (root == null) return "xml报告文件没有跟节点", null;
 
         // 问题类型映射优先级
         var issue_types_map = new Map<string, string>();
@@ -256,6 +254,6 @@ protected class ReSharperRedmineJob : Job
             }
         }
 
-        return project_issue;
+        return null, project_issue;
     }
 }
