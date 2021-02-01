@@ -448,8 +448,7 @@ function DeployServer.Task:DeleteBuild(msg)
 			ntf.create_time = msg.create_time
 			ntf.create_index = msg.create_index
 			A_WebAccountManager:SendMsgToAll(___all_struct[-206375730], ntf)
-			self:Save()
-			break
+			return
 		end
 	end
 	Lua.Assert(false, "构建信息不存在")

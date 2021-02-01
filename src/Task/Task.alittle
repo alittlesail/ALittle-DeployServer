@@ -381,8 +381,7 @@ protected class Task
                 ntf.create_index = msg.create_index;
                 A_WebAccountManager.SendMsgToAll(ntf);
 
-                this.Save();
-                break;
+                return;
             }
         }
 
