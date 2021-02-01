@@ -377,11 +377,18 @@ function DeployServer.Task:CopyJob(msg)
 	local job_info = ALittle.String_CopyTable(cur_job)
 	local job = DeployServer.CreateJob(self, job_info)
 	Lua.Assert(job ~= nil, "任务创建失败")
-	ALittle.List_Push(self._info.job_list, job_info)
-	ALittle.List_Push(self._job_list, job)
+	local job_index = 0
+	if msg.job_index == ALittle.List_Len(self._info.job_list) then
+		ALittle.List_Push(self._info.job_list, job_info)
+		ALittle.List_Push(self._job_list, job)
+	else
+		job_index = msg.job_index + 1
+		ALittle.List_Insert(self._info.job_list, msg.job_index + 1, job_info)
+		ALittle.List_Insert(self._job_list, msg.job_index + 1, job)
+	end
 	local ntf = {}
 	ntf.task_id = self._info.task_id
-	ntf.job_index = 0
+	ntf.job_index = job_index
 	ntf.job_info = job.data_info
 	A_WebAccountManager:SendMsgToAll(___all_struct[917908039], ntf)
 	self:Save()

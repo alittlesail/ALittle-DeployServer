@@ -282,12 +282,22 @@ protected class Task
         var job = CreateJob(this, job_info);
         assert (job != null, "任务创建失败");
 
-        ALittle.List_Push(this._info.job_list, job_info);
-        ALittle.List_Push(this._job_list, job);
+        var job_index = 0;
+        if (msg.job_index == ALittle.List_Len(this._info.job_list))
+        {
+            ALittle.List_Push(this._info.job_list, job_info);
+            ALittle.List_Push(this._job_list, job);
+        }
+        else
+        {
+            job_index = msg.job_index + 1;
+            ALittle.List_Insert(this._info.job_list, msg.job_index + 1, job_info);
+            ALittle.List_Insert(this._job_list, msg.job_index + 1, job);
+        }
 
         var ntf = new NCreateJob();
         ntf.task_id = this._info.task_id;
-        ntf.job_index = 0;
+        ntf.job_index = job_index;
         ntf.job_info = job.data_info;
         A_WebAccountManager.SendMsgToAll(ntf);
 
