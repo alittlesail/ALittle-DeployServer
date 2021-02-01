@@ -9,8 +9,15 @@ public struct TaskInfo
     string task_desc;				// 任务描述
     Map<string, bool> web_hook;	   // web推送的项目url
     List<JobInfo> job_list;			// 任务列表
-    List<BuildInfo> build_list;		// 构建列表
     int create_time;      			// 创建时间
+}
+
+public struct BuildInfo
+{
+    int task_id;		// 所属的任务ID
+    List<string> log_list;	// 构建日志
+    int create_time;	// 创建时间
+    int create_index;	// 创建序列
 }
 
 public enum TaskStatus
@@ -39,13 +46,15 @@ protected class Task
     private TaskInfo _info;
 
     private List<Job> _job_list = new List<Job>();
+    private List<BuildInfo> _build_list = new List<BuildInfo>();
     private int _status = 0;
     private double _progress = 0;
     private bool _next_do = false;	// 执行成功之后是否继续执行
 
-    public ctor(TaskInfo info)
+    public ctor(TaskInfo info, List<BuildInfo> build_list)
     {
         this._info = info;
+        this._build_list = build_list;
 
         // 构建job
         if (info.job_list != null)
@@ -99,9 +108,9 @@ protected class Task
 
         // 创建日志
         var build_info = new BuildInfo();
-        build_info.create_time = ALittle.Time_GetCurTime();
+        build_info.create_time, build_info.create_index = ALittle.NewTimeAndIndex();
         build_info.log_list = new List<string>();
-        ALittle.List_Push(this._info.build_list, build_info);
+        ALittle.List_Push(this._build_list, build_info);
 
         // 全部标记为等待
         for (var index, job in this._job_list)
@@ -120,7 +129,7 @@ protected class Task
             this.SendStatus();
         }
 
-        var file_path = this.GetBuildPath(build_info.create_time);
+        var file_path = this.GetBuildPath(build_info.create_time, build_info.create_index);
         ALittle.File_MakeDeepDir(ALittle.File_GetFilePathByPath(file_path));
         var log_file = lua.io.open(file_path, "wb");
         if (log_file != null)
@@ -162,6 +171,7 @@ protected class Task
             msg.task_id = this._info.task_id;
             msg.build_info = new D_BuildInfo();
             msg.build_info.create_time = build_info.create_time;
+            msg.build_info.create_index = build_info.create_index;
             A_WebAccountManager.SendMsgToAll(msg);
         }
 
@@ -194,6 +204,16 @@ protected class Task
     }
 
     public get info() : TaskInfo { return this._info; }
+
+    public fun GetBuild(int create_time, int create_index) : BuildInfo
+    {
+        for (var index, build_info in this._build_list)
+        {
+            if (build_info.create_time == create_time && build_info.create_index == create_index)
+            	return build_info;
+        }
+        return null;
+    }
 
     public fun HandleDelete()
     {
@@ -346,25 +366,32 @@ protected class Task
     {
         assert(this._status == TaskStatus.IDLE, "当前任务不是空闲状态");
 
-        var build_info = this._info.build_list[msg.build_index];
-        assert(build_info != null, "构建信息不存在:"..msg.build_index);
+        for (var index, build_info in this._build_list)
+        {
+        	if (build_info.create_time == msg.create_time && build_info.create_index == msg.create_index)
+            {
+                // 移除信息，删除文件
+                ALittle.List_Remove(this._build_list, index);
+                var file_path = this.GetBuildPath(build_info.create_time, build_info.create_index);
+                ALittle.File_DeleteFile(file_path);
 
-        // 移除信息，删除文件
-        ALittle.List_Remove(this._info.build_list, msg.build_index);
-        var file_path = this.GetBuildPath(build_info.create_time);
-        ALittle.File_DeleteFile(file_path);
+                var ntf = new NDeleteBuild();
+                ntf.task_id = this._info.task_id;
+                ntf.create_time = msg.create_time;
+                ntf.create_index = msg.create_index;
+                A_WebAccountManager.SendMsgToAll(ntf);
 
-        var ntf = new NDeleteBuild();
-        ntf.task_id = this._info.task_id;
-        ntf.build_index = msg.build_index;
-        A_WebAccountManager.SendMsgToAll(ntf);
+                this.Save();
+                break;
+            }
+        }
 
-        this.Save();
+        assert(false, "构建信息不存在");
     }
 
-    public fun GetBuildPath(int create_time) : string
+    public fun GetBuildPath(int create_time, int create_index) : string
     {
-    	return "DeployBuildLog/"..this._info.task_id.."/"..ALittle.Time_GetCurDate(create_time)..".log";
+    	return "DeployBuildLog/"..this._info.task_id.."/"..ALittle.Time_GetCurDate(create_time).."_"..create_index..".log";
     }
 
     public get data_info() : D_TaskInfo
@@ -390,10 +417,11 @@ protected class Task
             ALittle.List_Push(data.job_list, job.data_info);
 
         data.build_list = new List<D_BuildInfo>();
-        for (var index, build in this._info.build_list)
+        for (var index, build in this._build_list)
         {
             var info = new D_BuildInfo();
             info.create_time = build.create_time;
+            info.create_index = build.create_index;
             ALittle.List_Push(data.build_list, info);
         }
 
@@ -617,7 +645,8 @@ public struct NCreateBuild
 public struct C2SDeleteBuild
 {
     int task_id;
-    int build_index;	// 构建所在的位置
+    int create_time;	// 创建
+    int create_index;	// 构建所在的位置
 }
 
 public struct S2CDeleteBuild
@@ -628,7 +657,8 @@ public struct S2CDeleteBuild
 public struct NDeleteBuild
 {
     int task_id;
-    int build_index;
+    int create_time;	// 创建
+    int create_index;	// 构建所在的位置
 }
 
 [Msg]

@@ -83,8 +83,8 @@ option_map = {}
 })
 ALittle.RegStruct(1254025721, "DeployServer.C2SDeleteBuild", {
 name = "DeployServer.C2SDeleteBuild", ns_name = "DeployServer", rl_name = "C2SDeleteBuild", hash_code = 1254025721,
-name_list = {"task_id","build_index"},
-type_list = {"int","int"},
+name_list = {"task_id","create_time","create_index"},
+type_list = {"int","int","int"},
 option_map = {}
 })
 ALittle.RegStruct(1149037254, "DeployServer.C2SUpdateTaskInfo", {
@@ -141,16 +141,22 @@ name_list = {"task_id","task_name","task_desc","web_hook","create_time","status"
 type_list = {"int","string","string","List<string>","int","int","double","List<DeployServer.D_JobInfo>","List<DeployServer.D_BuildInfo>"},
 option_map = {}
 })
+ALittle.RegStruct(361832837, "DeployServer.BuildInfo", {
+name = "DeployServer.BuildInfo", ns_name = "DeployServer", rl_name = "BuildInfo", hash_code = 361832837,
+name_list = {"task_id","log_list","create_time","create_index"},
+type_list = {"int","List<string>","int","int"},
+option_map = {}
+})
 ALittle.RegStruct(276033112, "DeployServer.TaskInfo", {
 name = "DeployServer.TaskInfo", ns_name = "DeployServer", rl_name = "TaskInfo", hash_code = 276033112,
-name_list = {"task_id","task_name","task_desc","web_hook","job_list","build_list","create_time"},
-type_list = {"int","string","string","Map<string,bool>","List<DeployServer.JobInfo>","List<DeployServer.BuildInfo>","int"},
+name_list = {"task_id","task_name","task_desc","web_hook","job_list","create_time"},
+type_list = {"int","string","string","Map<string,bool>","List<DeployServer.JobInfo>","int"},
 option_map = {primary="task_id"}
 })
 ALittle.RegStruct(-206375730, "DeployServer.NDeleteBuild", {
 name = "DeployServer.NDeleteBuild", ns_name = "DeployServer", rl_name = "NDeleteBuild", hash_code = -206375730,
-name_list = {"task_id","build_index"},
-type_list = {"int","int"},
+name_list = {"task_id","create_time","create_index"},
+type_list = {"int","int","int"},
 option_map = {}
 })
 ALittle.RegStruct(-173628832, "DeployServer.NModifyJob", {
@@ -173,12 +179,14 @@ DeployServer.TaskStatus = {
 
 DeployServer.Task = Lua.Class(nil, "DeployServer.Task")
 
-function DeployServer.Task:Ctor(info)
+function DeployServer.Task:Ctor(info, build_list)
 	___rawset(self, "_job_list", {})
+	___rawset(self, "_build_list", {})
 	___rawset(self, "_status", 0)
 	___rawset(self, "_progress", 0)
 	___rawset(self, "_next_do", false)
 	___rawset(self, "_info", info)
+	___rawset(self, "_build_list", build_list)
 	if info.job_list ~= nil then
 		for index, job_info in ___ipairs(info.job_list) do
 			local job = DeployServer.CreateJob(self, job_info)
@@ -224,9 +232,9 @@ function DeployServer.Task:StartImpl()
 	self._progress = 0
 	self:SendStatus()
 	local build_info = {}
-	build_info.create_time = ALittle.Time_GetCurTime()
+	build_info.create_time, build_info.create_index = ALittle.NewTimeAndIndex()
 	build_info.log_list = {}
-	ALittle.List_Push(self._info.build_list, build_info)
+	ALittle.List_Push(self._build_list, build_info)
 	for index, job in ___ipairs(self._job_list) do
 		job:Waiting()
 	end
@@ -239,7 +247,7 @@ function DeployServer.Task:StartImpl()
 		self._progress = (index - 1) / ALittle.List_Len(self._job_list)
 		self:SendStatus()
 	end
-	local file_path = self:GetBuildPath(build_info.create_time)
+	local file_path = self:GetBuildPath(build_info.create_time, build_info.create_index)
 	ALittle.File_MakeDeepDir(ALittle.File_GetFilePathByPath(file_path))
 	local log_file = io.open(file_path, "wb")
 	if log_file ~= nil then
@@ -275,6 +283,7 @@ function DeployServer.Task:StartImpl()
 		msg.task_id = self._info.task_id
 		msg.build_info = {}
 		msg.build_info.create_time = build_info.create_time
+		msg.build_info.create_index = build_info.create_index
 		A_WebAccountManager:SendMsgToAll(___all_struct[1487624699], msg)
 	end
 	self:Save()
@@ -307,6 +316,15 @@ end
 
 function DeployServer.Task.__getter:info()
 	return self._info
+end
+
+function DeployServer.Task:GetBuild(create_time, create_index)
+	for index, build_info in ___ipairs(self._build_list) do
+		if build_info.create_time == create_time and build_info.create_index == create_index then
+			return build_info
+		end
+	end
+	return nil
 end
 
 function DeployServer.Task:HandleDelete()
@@ -420,20 +438,25 @@ end
 
 function DeployServer.Task:DeleteBuild(msg)
 	Lua.Assert(self._status == 0, "当前任务不是空闲状态")
-	local build_info = self._info.build_list[msg.build_index]
-	Lua.Assert(build_info ~= nil, "构建信息不存在:" .. msg.build_index)
-	ALittle.List_Remove(self._info.build_list, msg.build_index)
-	local file_path = self:GetBuildPath(build_info.create_time)
-	ALittle.File_DeleteFile(file_path)
-	local ntf = {}
-	ntf.task_id = self._info.task_id
-	ntf.build_index = msg.build_index
-	A_WebAccountManager:SendMsgToAll(___all_struct[-206375730], ntf)
-	self:Save()
+	for index, build_info in ___ipairs(self._build_list) do
+		if build_info.create_time == msg.create_time and build_info.create_index == msg.create_index then
+			ALittle.List_Remove(self._build_list, index)
+			local file_path = self:GetBuildPath(build_info.create_time, build_info.create_index)
+			ALittle.File_DeleteFile(file_path)
+			local ntf = {}
+			ntf.task_id = self._info.task_id
+			ntf.create_time = msg.create_time
+			ntf.create_index = msg.create_index
+			A_WebAccountManager:SendMsgToAll(___all_struct[-206375730], ntf)
+			self:Save()
+			break
+		end
+	end
+	Lua.Assert(false, "构建信息不存在")
 end
 
-function DeployServer.Task:GetBuildPath(create_time)
-	return "DeployBuildLog/" .. self._info.task_id .. "/" .. ALittle.Time_GetCurDate(create_time) .. ".log"
+function DeployServer.Task:GetBuildPath(create_time, create_index)
+	return "DeployBuildLog/" .. self._info.task_id .. "/" .. ALittle.Time_GetCurDate(create_time) .. "_" .. create_index .. ".log"
 end
 
 function DeployServer.Task.__getter:data_info()
@@ -455,9 +478,10 @@ function DeployServer.Task.__getter:data_info()
 		ALittle.List_Push(data.job_list, job.data_info)
 	end
 	data.build_list = {}
-	for index, build in ___ipairs(self._info.build_list) do
+	for index, build in ___ipairs(self._build_list) do
 		local info = {}
 		info.create_time = build.create_time
+		info.create_index = build.create_index
 		ALittle.List_Push(data.build_list, info)
 	end
 	return data

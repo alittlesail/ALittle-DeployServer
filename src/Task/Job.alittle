@@ -92,6 +92,7 @@ public struct D_JobInfo
 public struct D_BuildInfo
 {
     int create_time;	// 构建时间
+    int create_index;	// 构建序列
 }
 
 protected class Job

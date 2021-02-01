@@ -17,8 +17,8 @@ option_map = {}
 })
 ALittle.RegStruct(1811432266, "DeployServer.D_BuildInfo", {
 name = "DeployServer.D_BuildInfo", ns_name = "DeployServer", rl_name = "D_BuildInfo", hash_code = 1811432266,
-name_list = {"create_time"},
-type_list = {"int"},
+name_list = {"create_time","create_index"},
+type_list = {"int","int"},
 option_map = {}
 })
 ALittle.RegStruct(1544249038, "DeployServer.JobInfo", {

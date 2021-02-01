@@ -89,12 +89,18 @@ function DeployServer.TaskManager:Setup()
 	local ___COROUTINE = coroutine.running()
 	local error = A_MysqlSystem:CreateIfNotExit(___all_struct[276033112])
 	Lua.Assert(error == nil, error)
-	error = A_MysqlSystem:CreateIfNotExit(___all_struct[1544249038])
+	error = A_MysqlSystem:CreateIfNotExit(___all_struct[361832837])
 	Lua.Assert(error == nil, error)
 	local task_error, task_list = A_MysqlSystem:SelectListFromByMap(___all_struct[276033112], {})
 	Lua.Assert(task_error == nil, task_error)
 	for index, task_info in ___ipairs(task_list) do
-		self._task_map[task_info.task_id] = DeployServer.Task(task_info)
+		local build_info = {}
+		build_info.task_id = task_info.task_id
+		local build_error, build_list = A_MysqlSystem:SelectListFromByMap(___all_struct[361832837], build_info)
+		if build_list == nil then
+			build_list = {}
+		end
+		self._task_map[task_info.task_id] = DeployServer.Task(task_info, build_list)
 		if self._max_task_id < task_info.task_id then
 			self._max_task_id = task_info.task_id
 		end
@@ -120,11 +126,16 @@ function DeployServer.TaskManager:HandleCreateTask(task_name)
 	task_info.task_id = self._max_task_id
 	task_info.task_name = task_name
 	task_info.create_time = ALittle.Time_GetCurTime()
-	task_info.build_list = {}
 	task_info.job_list = {}
 	local error = A_MysqlSystem:InsertInto(___all_struct[276033112], task_info)
 	Lua.Assert(error == nil, error)
-	local task = DeployServer.Task(task_info)
+	local build_info = {}
+	build_info.task_id = task_info.task_id
+	local build_error, build_list = A_MysqlSystem:SelectListFromByMap(___all_struct[361832837], build_info)
+	if build_list == nil then
+		build_list = {}
+	end
+	local task = DeployServer.Task(task_info, build_list)
 	self._task_map[task_info.task_id] = task
 	local msg = {}
 	msg.task_info = task.data_info
@@ -139,10 +150,15 @@ function DeployServer.TaskManager:HandleCopyTask(task_id)
 	local task_info = ALittle.String_CopyTable(target.info)
 	task_info.task_id = self._max_task_id
 	task_info.create_time = ALittle.Time_GetCurTime()
-	task_info.build_list = {}
 	local error = A_MysqlSystem:InsertInto(___all_struct[276033112], task_info)
 	Lua.Assert(error == nil, error)
-	local task = DeployServer.Task(task_info)
+	local build_info = {}
+	build_info.task_id = task_info.task_id
+	local build_error, build_list = A_MysqlSystem:SelectListFromByMap(___all_struct[361832837], build_info)
+	if build_list == nil then
+		build_list = {}
+	end
+	local task = DeployServer.Task(task_info, build_list)
 	self._task_map[task_info.task_id] = task
 	local msg = {}
 	msg.task_info = task.data_info

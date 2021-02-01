@@ -14,7 +14,7 @@ public class TaskManager
     {
         var error = A_MysqlSystem.CreateIfNotExit{TaskInfo}();
         assert(error == null, error);
-        error = A_MysqlSystem.CreateIfNotExit{JobInfo}();
+        error = A_MysqlSystem.CreateIfNotExit{BuildInfo}();
         assert(error == null, error);
 
         var task_error, task_list = A_MysqlSystem.SelectListFromByMap(new TaskInfo());
@@ -23,7 +23,11 @@ public class TaskManager
         // 开始构建任务列表
         for (var index, task_info in task_list)
         {
-            this._task_map[task_info.task_id] = new Task(task_info);
+            var build_info = new BuildInfo();
+            build_info.task_id = task_info.task_id;
+            var build_error, build_list = A_MysqlSystem.SelectListFromByMap(build_info);
+            if (build_list == null) build_list = new List<BuildInfo>();
+            this._task_map[task_info.task_id] = new Task(task_info, build_list);
             if (this._max_task_id < task_info.task_id) this._max_task_id = task_info.task_id;
         }
 
@@ -49,13 +53,17 @@ public class TaskManager
         task_info.task_id = this._max_task_id;
         task_info.task_name = task_name;
         task_info.create_time = ALittle.Time_GetCurTime();
-        task_info.build_list = new List<BuildInfo>();
         task_info.job_list = new List<JobInfo>();
         var error = A_MysqlSystem.InsertInto(task_info);
         assert(error == null, error);
 
+        var build_info = new BuildInfo();
+        build_info.task_id = task_info.task_id;
+        var build_error, build_list = A_MysqlSystem.SelectListFromByMap(build_info);
+        if (build_list == null) build_list = new List<BuildInfo>();
+
         // 创建任务
-        var task = new Task(task_info);
+        var task = new Task(task_info, build_list);
         this._task_map[task_info.task_id] = task;
 
         // 将消息发给所有账号
@@ -73,12 +81,16 @@ public class TaskManager
         var task_info = ALittle.String_CopyTable(target.info);
         task_info.task_id = this._max_task_id;
         task_info.create_time = ALittle.Time_GetCurTime();
-        task_info.build_list = new List<BuildInfo>();
         var error = A_MysqlSystem.InsertInto(task_info);
         assert(error == null, error);
 
+        var build_info = new BuildInfo();
+        build_info.task_id = task_info.task_id;
+        var build_error, build_list = A_MysqlSystem.SelectListFromByMap(build_info);
+        if (build_list == null) build_list = new List<BuildInfo>();
+
         // 创建任务
-        var task = new Task(task_info);
+        var task = new Task(task_info, build_list);
         this._task_map[task_info.task_id] = task;
 
         // 将消息发给所有账号
