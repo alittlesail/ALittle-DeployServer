@@ -1,6 +1,28 @@
 
 namespace DeployServer;
 
+public enum TaskTimerType
+{
+    NONE = 0;
+    INTERVAL = 1;	// 间隔时间，单位秒
+    POINT = 2;	// 每天凌晨后的多少时间，单位秒
+}
+
+public struct TaskTimer
+{
+    int type;
+
+    int interval;	// 间隔时间，单位秒
+
+    // 某个时间点
+    int year_point;	// 年点
+    int month_point;	// 月点
+    int day_point;	// 天点
+    int hour_point;	// 小时点
+    int minute_point;	// 分钟点
+    int second_point; // 秒点
+}
+
 public struct TaskInfo
 {
     option primary = "task_id";
@@ -10,6 +32,7 @@ public struct TaskInfo
     Map<string, bool> web_hook;	   // web推送的项目url
     List<JobInfo> job_list;			// 任务列表
     int create_time;      			// 创建时间
+    TaskTimer timer;				// 定时器
 }
 
 public struct BuildInfo
@@ -33,6 +56,7 @@ public struct D_TaskInfo
     string task_desc;
     List<string> web_hook;
     int create_time;
+    TaskTimer timer;				// 定时器
 
     int status;
     double progress;		// 如果是执行，执行进度
@@ -51,6 +75,8 @@ protected class Task
     private double _progress = 0;
     private bool _next_do = false;	// 执行成功之后是否继续执行
 
+    private int _timer_id;
+
     public ctor(TaskInfo info, List<BuildInfo> build_list)
     {
         this._info = info;
@@ -65,6 +91,141 @@ protected class Task
                 this._job_list[index] = job;
             }
         }
+
+        this.UpdateTimer();
+    }
+
+    private fun UpdateTimer()
+    {
+        // 先删除定时器
+        if (this._timer_id != null)
+        {
+            A_LoopSystem.RemoveTimer(this._timer_id);
+            this._timer_id = null;
+        }
+
+        // 处理间隔时间
+        if (this._info.timer.type == TaskTimerType.INTERVAL)
+        {
+            if (this._info.timer.interval == null || this._info.timer.interval <= 0) return;
+
+            var interval_ms = this._info.timer.interval * 1000;
+            this._timer_id = A_LoopSystem.AddTimer(interval_ms, bind(this.HandleTimerLoop, this), 0, interval_ms);
+            return;
+        }
+
+        // 定点时间检查
+        if (this._info.timer.type == TaskTimerType.POINT)
+        {
+            var timer = this._info.timer;
+
+            // 判断小时参数
+            if (timer.hour_point == null || timer.hour_point < 0 || timer.hour_point > 23) return;
+            // 判断分钟参数
+            if (timer.minute_point == null || timer.minute_point < 0 || timer.minute_point > 59) return;
+            // 判断秒数参数
+            if (timer.second_point == null || timer.second_point < 0 || timer.second_point > 59) return;
+
+            // 确定了年份，那么就确定了未来的一个时间点
+            if (timer.year_point != null && timer.year_point > 0)
+            {
+                // 判断月份参数
+                if (timer.month_point == null || timer.month_point < 1 || timer.month_point > 12) return;
+                // 判断天数
+                var day_count = ALittle.Time_GetMonthDayCount(timer.year_point, timer.month_point);
+                if (timer.day_point == null || timer.day_point < 1 || timer.day_point > day_count) return;
+
+                var target_time = ALittle.Time_MakeTime(timer.year_point, timer.month_point, timer.day_point, timer.hour_point, timer.minute_point, timer.second_point);
+                var delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000;
+                if (delay_ms > 0) this._timer_id = A_LoopSystem.AddTimer(delay_ms, bind(this.HandleTimerOnce, this), 1, 0);
+                return;
+            }
+
+            // 获取当前时间和年份
+            var cur_time = ALittle.Time_GetCurTime();
+            var cur_year = ALittle.Time_GetYear(cur_time);
+            var cur_month = ALittle.Time_GetMonth(cur_time);
+            var cur_day = ALittle.Time_GetDay(cur_time);
+
+            // 确定了月份
+            if (timer.month_point != null && timer.month_point > 0)
+            {
+                // 先判断今年，如果今年的时间已过，那么就判断明年，依次类推
+                // 400年内必定会有闰月，所以最大遍历时间是cur_year + 800，那么就跨度800年
+                for (var year = cur_year; year <= cur_year + 800; 1)
+                {
+                    // 判断天数
+                    var day_count = ALittle.Time_GetMonthDayCount(cur_year, timer.month_point);
+                    if (timer.day_point != null && timer.day_point >= 1 && timer.day_point <= day_count)
+                    {
+                        var target_time = ALittle.Time_MakeTime(year, timer.month_point, timer.day_point, timer.hour_point, timer.minute_point, timer.second_point);
+                        var delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000;
+                        // 这里必须是大于0，否则再HandleTimerPoint内会出现大量循环
+                        if (delay_ms > 0)
+                        {
+                            this._timer_id = A_LoopSystem.AddTimer(delay_ms, bind(this.HandleTimerPoint, this), 1, 0);
+                            return;
+                        }
+                    }
+                }
+                return;
+            }
+
+            // 确定了日期
+            if (timer.day_point != null && timer.day_point > 0)
+            {
+                // 先判断今年，如果今年的时间已过，那么就判断明年，依次类推
+                // 400年内必定会有闰月，所以最大遍历时间是cur_year + 800，那么就跨度800年
+                for (var year = cur_year; year <= cur_year + 800; 1)
+                {
+                    // 逐个月份判断，如果时间已过，那么就判断下个月，依次类推
+                    for (var month = 1; month <= 12; 1)
+                    {
+                        // 判断天数
+                        var day_count = ALittle.Time_GetMonthDayCount(year, month);
+                        if (timer.day_point <= day_count)
+                        {
+                            var target_time = ALittle.Time_MakeTime(year, month, timer.day_point, timer.hour_point, timer.minute_point, timer.second_point);
+                            var delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000;
+                            // 这里必须是大于0，否则再HandleTimerPoint内会出现大量循环
+                            if (delay_ms > 0)
+                            {
+                                this._timer_id = A_LoopSystem.AddTimer(delay_ms, bind(this.HandleTimerPoint, this), 1, 0);
+                                return;
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            // 如果没有确定天数，那么就是每天了
+            var target_time = ALittle.Time_MakeTime(cur_year, cur_month, cur_day, timer.hour_point, timer.minute_point, timer.second_point);
+            if (target_time <= ALittle.Time_GetCurTime()) target_time += 3600 * 24;
+            var delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000;
+            this._timer_id = A_LoopSystem.AddTimer(delay_ms, bind(this.HandleTimerLoop, this), 0, 3600 * 24);
+        }
+    }
+
+    // 一次性定时器
+    private fun HandleTimerOnce()
+    {
+        this._timer_id = null;
+        this.ForceStart();
+    }
+
+    // 间隔定时
+    private fun HandleTimerLoop()
+    {
+        this.ForceStart();
+    }
+
+    // 时间点定时
+    private fun HandleTimerPoint()
+    {
+        this._timer_id = null;
+        this.ForceStart();
+        this.UpdateTimer();
     }
 
     public fun GetJobIndex(Job job) : int { return ALittle.List_IndexOf(this._job_list, job); }
@@ -224,15 +385,20 @@ protected class Task
     {
         this._info.task_name = msg.task_name;
         this._info.task_desc = msg.task_desc;
+        this._info.timer = msg.timer;
         this._info.web_hook = new Map<string, bool>();
         for (var index, value in msg.web_hook)
         	this._info.web_hook[value] = true;
+
+        // 重启定时器
+        this.UpdateTimer();
 
         var ntf = new NUpdateTaskInfo();
         ntf.task_id = msg.task_id;
         ntf.task_name = msg.task_name;
         ntf.task_desc = msg.task_desc;
         ntf.web_hook = msg.web_hook;
+        ntf.timer = msg.timer;
         A_WebAccountManager.SendMsgToAll(ntf);
 
         this.Save();
@@ -410,6 +576,7 @@ protected class Task
         data.task_name = this._info.task_name;
         data.task_desc = this._info.task_desc;
         data.create_time = this._info.create_time;
+        data.timer = this._info.timer;
 
         data.status = this._status;
         data.progress = this._progress;
@@ -473,6 +640,7 @@ public struct C2SUpdateTaskInfo
     string task_name;
     string task_desc;
     List<string> web_hook;
+    TaskTimer timer;
 }
 
 public struct S2CUpdateTaskInfo
@@ -486,6 +654,7 @@ public struct NUpdateTaskInfo
     string task_name;
     string task_desc;
     List<string> web_hook;
+    TaskTimer timer;
 }
 
 [Msg]

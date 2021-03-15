@@ -41,8 +41,8 @@ option_map = {}
 })
 ALittle.RegStruct(-1662612614, "DeployServer.NUpdateTaskInfo", {
 name = "DeployServer.NUpdateTaskInfo", ns_name = "DeployServer", rl_name = "NUpdateTaskInfo", hash_code = -1662612614,
-name_list = {"task_id","task_name","task_desc","web_hook"},
-type_list = {"int","string","string","List<string>"},
+name_list = {"task_id","task_name","task_desc","web_hook","timer"},
+type_list = {"int","string","string","List<string>","DeployServer.TaskTimer"},
 option_map = {}
 })
 ALittle.RegStruct(1624339767, "DeployServer.S2CMoveJob", {
@@ -89,14 +89,20 @@ option_map = {}
 })
 ALittle.RegStruct(1149037254, "DeployServer.C2SUpdateTaskInfo", {
 name = "DeployServer.C2SUpdateTaskInfo", ns_name = "DeployServer", rl_name = "C2SUpdateTaskInfo", hash_code = 1149037254,
-name_list = {"task_id","task_name","task_desc","web_hook"},
-type_list = {"int","string","string","List<string>"},
+name_list = {"task_id","task_name","task_desc","web_hook","timer"},
+type_list = {"int","string","string","List<string>","DeployServer.TaskTimer"},
 option_map = {}
 })
 ALittle.RegStruct(-1050312971, "DeployServer.NDeleteJob", {
 name = "DeployServer.NDeleteJob", ns_name = "DeployServer", rl_name = "NDeleteJob", hash_code = -1050312971,
 name_list = {"task_id","job_index"},
 type_list = {"int","int"},
+option_map = {}
+})
+ALittle.RegStruct(-1004838094, "DeployServer.TaskTimer", {
+name = "DeployServer.TaskTimer", ns_name = "DeployServer", rl_name = "TaskTimer", hash_code = -1004838094,
+name_list = {"type","interval","year_point","month_point","day_point","hour_point","minute_point","second_point"},
+type_list = {"int","int","int","int","int","int","int","int"},
 option_map = {}
 })
 ALittle.RegStruct(917908039, "DeployServer.NCreateJob", {
@@ -137,8 +143,8 @@ option_map = {}
 })
 ALittle.RegStruct(390627548, "DeployServer.D_TaskInfo", {
 name = "DeployServer.D_TaskInfo", ns_name = "DeployServer", rl_name = "D_TaskInfo", hash_code = 390627548,
-name_list = {"task_id","task_name","task_desc","web_hook","create_time","status","progress","job_list","build_list"},
-type_list = {"int","string","string","List<string>","int","int","double","List<DeployServer.D_JobInfo>","List<DeployServer.D_BuildInfo>"},
+name_list = {"task_id","task_name","task_desc","web_hook","create_time","timer","status","progress","job_list","build_list"},
+type_list = {"int","string","string","List<string>","int","DeployServer.TaskTimer","int","double","List<DeployServer.D_JobInfo>","List<DeployServer.D_BuildInfo>"},
 option_map = {}
 })
 ALittle.RegStruct(361832837, "DeployServer.BuildInfo", {
@@ -149,8 +155,8 @@ option_map = {}
 })
 ALittle.RegStruct(276033112, "DeployServer.TaskInfo", {
 name = "DeployServer.TaskInfo", ns_name = "DeployServer", rl_name = "TaskInfo", hash_code = 276033112,
-name_list = {"task_id","task_name","task_desc","web_hook","job_list","create_time"},
-type_list = {"int","string","string","Map<string,bool>","List<DeployServer.JobInfo>","int"},
+name_list = {"task_id","task_name","task_desc","web_hook","job_list","create_time","timer"},
+type_list = {"int","string","string","Map<string,bool>","List<DeployServer.JobInfo>","int","DeployServer.TaskTimer"},
 option_map = {primary="task_id"}
 })
 ALittle.RegStruct(-206375730, "DeployServer.NDeleteBuild", {
@@ -171,6 +177,12 @@ name_list = {"task_id","job_type","job_index","job_name","detail"},
 type_list = {"int","int","int","string","DeployServer.JobInfoDetail"},
 option_map = {}
 })
+
+DeployServer.TaskTimerType = {
+	NONE = 0,
+	INTERVAL = 1,
+	POINT = 2,
+}
 
 DeployServer.TaskStatus = {
 	IDLE = 0,
@@ -193,6 +205,113 @@ function DeployServer.Task:Ctor(info, build_list)
 			self._job_list[index] = job
 		end
 	end
+	self:UpdateTimer()
+end
+
+function DeployServer.Task:UpdateTimer()
+	if self._timer_id ~= nil then
+		A_LoopSystem:RemoveTimer(self._timer_id)
+		self._timer_id = nil
+	end
+	if self._info.timer.type == 1 then
+		if self._info.timer.interval == nil or self._info.timer.interval <= 0 then
+			return
+		end
+		local interval_ms = self._info.timer.interval * 1000
+		self._timer_id = A_LoopSystem:AddTimer(interval_ms, Lua.Bind(self.HandleTimerLoop, self), 0, interval_ms)
+		return
+	end
+	if self._info.timer.type == 2 then
+		local timer = self._info.timer
+		if timer.hour_point == nil or timer.hour_point < 0 or timer.hour_point > 23 then
+			return
+		end
+		if timer.minute_point == nil or timer.minute_point < 0 or timer.minute_point > 59 then
+			return
+		end
+		if timer.second_point == nil or timer.second_point < 0 or timer.second_point > 59 then
+			return
+		end
+		if timer.year_point ~= nil and timer.year_point > 0 then
+			if timer.month_point == nil or timer.month_point < 1 or timer.month_point > 12 then
+				return
+			end
+			local day_count = ALittle.Time_GetMonthDayCount(timer.year_point, timer.month_point)
+			if timer.day_point == nil or timer.day_point < 1 or timer.day_point > day_count then
+				return
+			end
+			local target_time = ALittle.Time_MakeTime(timer.year_point, timer.month_point, timer.day_point, timer.hour_point, timer.minute_point, timer.second_point)
+			local delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000
+			if delay_ms > 0 then
+				self._timer_id = A_LoopSystem:AddTimer(delay_ms, Lua.Bind(self.HandleTimerOnce, self), 1, 0)
+			end
+			return
+		end
+		local cur_time = ALittle.Time_GetCurTime()
+		local cur_year = ALittle.Time_GetYear(cur_time)
+		local cur_month = ALittle.Time_GetMonth(cur_time)
+		local cur_day = ALittle.Time_GetDay(cur_time)
+		if timer.month_point ~= nil and timer.month_point > 0 then
+			local year = cur_year
+			while true do
+				if not(year <= cur_year + 800) then break end
+				local day_count = ALittle.Time_GetMonthDayCount(cur_year, timer.month_point)
+				if timer.day_point ~= nil and timer.day_point >= 1 and timer.day_point <= day_count then
+					local target_time = ALittle.Time_MakeTime(year, timer.month_point, timer.day_point, timer.hour_point, timer.minute_point, timer.second_point)
+					local delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000
+					if delay_ms > 0 then
+						self._timer_id = A_LoopSystem:AddTimer(delay_ms, Lua.Bind(self.HandleTimerPoint, self), 1, 0)
+						return
+					end
+				end
+				year = year+(1)
+			end
+			return
+		end
+		if timer.day_point ~= nil and timer.day_point > 0 then
+			local year = cur_year
+			while true do
+				if not(year <= cur_year + 800) then break end
+				local month = 1
+				while true do
+					if not(month <= 12) then break end
+					local day_count = ALittle.Time_GetMonthDayCount(year, month)
+					if timer.day_point <= day_count then
+						local target_time = ALittle.Time_MakeTime(year, month, timer.day_point, timer.hour_point, timer.minute_point, timer.second_point)
+						local delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000
+						if delay_ms > 0 then
+							self._timer_id = A_LoopSystem:AddTimer(delay_ms, Lua.Bind(self.HandleTimerPoint, self), 1, 0)
+							return
+						end
+					end
+					month = month+(1)
+				end
+				year = year+(1)
+			end
+			return
+		end
+		local target_time = ALittle.Time_MakeTime(cur_year, cur_month, cur_day, timer.hour_point, timer.minute_point, timer.second_point)
+		if target_time <= ALittle.Time_GetCurTime() then
+			target_time = target_time + (3600 * 24)
+		end
+		local delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000
+		self._timer_id = A_LoopSystem:AddTimer(delay_ms, Lua.Bind(self.HandleTimerLoop, self), 0, 3600 * 24)
+	end
+end
+
+function DeployServer.Task:HandleTimerOnce()
+	self._timer_id = nil
+	self:ForceStart()
+end
+
+function DeployServer.Task:HandleTimerLoop()
+	self:ForceStart()
+end
+
+function DeployServer.Task:HandleTimerPoint()
+	self._timer_id = nil
+	self:ForceStart()
+	self:UpdateTimer()
 end
 
 function DeployServer.Task:GetJobIndex(job)
@@ -334,15 +453,18 @@ end
 function DeployServer.Task:UpdateInfo(msg)
 	self._info.task_name = msg.task_name
 	self._info.task_desc = msg.task_desc
+	self._info.timer = msg.timer
 	self._info.web_hook = {}
 	for index, value in ___ipairs(msg.web_hook) do
 		self._info.web_hook[value] = true
 	end
+	self:UpdateTimer()
 	local ntf = {}
 	ntf.task_id = msg.task_id
 	ntf.task_name = msg.task_name
 	ntf.task_desc = msg.task_desc
 	ntf.web_hook = msg.web_hook
+	ntf.timer = msg.timer
 	A_WebAccountManager:SendMsgToAll(___all_struct[-1662612614], ntf)
 	self:Save()
 end
@@ -471,6 +593,7 @@ function DeployServer.Task.__getter:data_info()
 	data.task_name = self._info.task_name
 	data.task_desc = self._info.task_desc
 	data.create_time = self._info.create_time
+	data.timer = self._info.timer
 	data.status = self._status
 	data.progress = self._progress
 	data.web_hook = {}
