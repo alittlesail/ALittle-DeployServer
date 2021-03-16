@@ -295,7 +295,7 @@ function DeployServer.Task:UpdateTimer()
 			target_time = target_time + (3600 * 24)
 		end
 		local delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000
-		self._timer_id = A_LoopSystem:AddTimer(delay_ms, Lua.Bind(self.HandleTimerLoop, self), 0, 3600 * 24)
+		self._timer_id = A_LoopSystem:AddTimer(delay_ms, Lua.Bind(self.HandleTimerLoop, self), 0, 3600 * 24 * 100)
 	end
 end
 

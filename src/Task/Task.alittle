@@ -203,7 +203,7 @@ protected class Task
             var target_time = ALittle.Time_MakeTime(cur_year, cur_month, cur_day, timer.hour_point, timer.minute_point, timer.second_point);
             if (target_time <= ALittle.Time_GetCurTime()) target_time += 3600 * 24;
             var delay_ms = (target_time - ALittle.Time_GetCurTime()) * 1000;
-            this._timer_id = A_LoopSystem.AddTimer(delay_ms, bind(this.HandleTimerLoop, this), 0, 3600 * 24);
+            this._timer_id = A_LoopSystem.AddTimer(delay_ms, bind(this.HandleTimerLoop, this), 0, 3600 * 24 * 100);
         }
     }
 
