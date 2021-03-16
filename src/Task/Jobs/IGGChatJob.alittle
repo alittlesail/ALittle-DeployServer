@@ -1,0 +1,20 @@
+
+namespace DeployServer;
+
+protected class IGGChatJob : Job
+{
+    public await fun Execute(BuildInfo build_info) : string, string
+    {
+        var url = "http://im-api.skyunion.net/msg";
+
+        var data = new Map<string, any>();
+        data["token"] = "";
+        data["target"] = "group";
+    	data["room"] = this._info.detail.igg_chat_room_id;
+        data["title"] = this._info.detail.igg_chat_title;
+        data["content_type"] = 1;
+        data["content"] = this._info.detail.igg_chat_content;
+        var error, result = A_HttpSystem.PostJson(url, data);
+        return error, result;
+    }
+}

@@ -12,6 +12,7 @@ public enum JobType
     CREATEPROCESS = 6;	// 创建进程
     KILLPROCESS = 7;	// 强杀进程
     RESHARPERREDMINE = 8;	// 代码检查
+    IGG_CHAT = 9;	// IGG的聊天工具群通知
 }
 
 public struct JobInfoDetail
@@ -61,6 +62,11 @@ public struct JobInfoDetail
     Map<string, int> r2r_redmine_account_map;	// 账号和id的映射
     string r2r_curl_exe_path;		// curl工具的文件路径
     string r2r_code_tool;
+
+    // IGGChat群通知
+    string igg_chat_room_id;		// 房间id
+    string igg_chat_title;		// 标题
+    string igg_chat_content;	// 内容
 }
 
 protected struct JobInfo
@@ -203,5 +209,7 @@ protected static CreateJob(Task task, JobInfo info) : Job
     	return new KillProcessJob(task, info);
     elseif (info.job_type == JobType.RESHARPERREDMINE)
     	return new ReSharperRedmineJob(task, info);
+    elseif (info.job_type == JobType.IGG_CHAT)
+    	return new IGGChatJob(task, info);
     return null;
 }
