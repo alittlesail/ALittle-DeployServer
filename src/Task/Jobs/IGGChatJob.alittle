@@ -8,7 +8,7 @@ protected class IGGChatJob : Job
         var url = "http://im-api.skyunion.net/msg";
 
         var data = new Map<string, any>();
-        data["token"] = "";
+        data["token"] = this._info.detail.igg_chat_token;
         data["target"] = "group";
     	data["room"] = this._info.detail.igg_chat_room_id;
         data["title"] = this._info.detail.igg_chat_title;

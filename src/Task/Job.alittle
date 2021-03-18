@@ -67,6 +67,7 @@ public struct JobInfoDetail
     string igg_chat_room_id;		// 房间id
     string igg_chat_title;		// 标题
     string igg_chat_content;	// 内容
+    string igg_chat_token;	// token
 }
 
 protected struct JobInfo

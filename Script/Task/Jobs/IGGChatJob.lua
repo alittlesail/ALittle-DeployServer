@@ -15,7 +15,7 @@ function DeployServer.IGGChatJob:Execute(build_info)
 	local ___COROUTINE = coroutine.running()
 	local url = "http://im-api.skyunion.net/msg"
 	local data = {}
-	data["token"] = ""
+	data["token"] = self._info.detail.igg_chat_token
 	data["target"] = "group"
 	data["room"] = self._info.detail.igg_chat_room_id
 	data["title"] = self._info.detail.igg_chat_title
