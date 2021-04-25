@@ -127,6 +127,7 @@ function DeployServer.TaskManager:HandleCreateTask(task_name)
 	task_info.task_name = task_name
 	task_info.create_time = ALittle.Time_GetCurTime()
 	task_info.job_list = {}
+	task_info.timer = {}
 	local error = A_MysqlSystem:InsertInto(___all_struct[276033112], task_info)
 	Lua.Assert(error == nil, error)
 	local build_info = {}

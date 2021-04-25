@@ -54,6 +54,7 @@ public class TaskManager
         task_info.task_name = task_name;
         task_info.create_time = ALittle.Time_GetCurTime();
         task_info.job_list = new List<JobInfo>();
+        task_info.timer = new TaskTimer();
         var error = A_MysqlSystem.InsertInto(task_info);
         assert(error == null, error);
 
