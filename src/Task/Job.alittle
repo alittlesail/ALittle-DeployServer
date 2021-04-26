@@ -13,6 +13,7 @@ public enum JobType
     KILLPROCESS = 7;	// 强杀进程
     RESHARPERREDMINE = 8;	// 代码检查
     IGG_CHAT = 9;	// IGG的聊天工具群通知
+    MONITORPROCESS = 10;	// 创建进程
 }
 
 public struct JobInfoDetail
@@ -68,6 +69,9 @@ public struct JobInfoDetail
     string igg_chat_title;		// 标题
     string igg_chat_content;	// 内容
     string igg_chat_token;	// token
+
+    // 监视进程
+    string monitorprocess_exe_path;	// 可执行文件路径
 }
 
 protected struct JobInfo
@@ -86,14 +90,26 @@ public enum JobStatus
     FAILED = 3;		// 执行失败
 }
 
+public struct D_ProcessInfo
+{
+    int process_id;
+    int cpu;
+    int mem;
+    int vmem;
+    int io_read;
+    int io_write;
+}
+
 public struct D_JobInfo
 {
     int job_type;
     string job_name;
     int status;
     double progress;	// 执行进度
-
+    
     JobInfoDetail detail;
+
+    List<D_ProcessInfo> process_list;		// 进程信息
 }
 
 public struct D_BuildInfo
@@ -113,6 +129,8 @@ protected class Job
     {
         this._task = task;
         this._info = info;
+
+        this.OnDetailUpdate();
     }
 
     public get info() : JobInfo { return this._info; }
@@ -128,10 +146,22 @@ protected class Job
         return data;
     }
 
+    public get status_info() : NJobStatus
+    {
+        var status_msg = new NJobStatus();
+        status_msg.task_id = this._task.info.task_id;
+        status_msg.index = this._task.GetJobIndex(this);
+        status_msg.status = this._status;
+        status_msg.progress = this._progress;
+        return status_msg;
+    }
+
     public fun Modify(C2SModifyJob msg)
     {
         this._info.job_name = msg.job_name;
         this._info.detail = msg.detail;
+
+        this.OnDetailUpdate();
     }
 
     public fun Waiting()
@@ -175,12 +205,13 @@ protected class Job
 
     private fun SendStatus()
     {
-        var status_msg = new NJobStatus();
-        status_msg.task_id = this._task.info.task_id;
-        status_msg.index = this._task.GetJobIndex(this);
-        status_msg.status = this._status;
-        status_msg.progress = this._progress;
+        var status_msg = this.status_info;
         A_WebAccountManager.SendMsgToAll(status_msg);
+    }
+
+    private fun OnDetailUpdate()
+    {
+
     }
 }
 
@@ -190,6 +221,7 @@ public struct NJobStatus
     int index;
     int status;
     double progress;
+    List<D_ProcessInfo> process_list;	// 进程信息
 }
 
 protected static CreateJob(Task task, JobInfo info) : Job
@@ -212,5 +244,7 @@ protected static CreateJob(Task task, JobInfo info) : Job
     	return new ReSharperRedmineJob(task, info);
     elseif (info.job_type == JobType.IGG_CHAT)
     	return new IGGChatJob(task, info);
+    elseif (info.job_type == JobType.MONITORPROCESS)
+    	return new MonitorProcessJob(task, info);
     return null;
 }

@@ -1,0 +1,104 @@
+
+namespace DeployServer;
+
+private struct ProcessCpuInfo
+{
+    int last_time;
+    int last_system_time;
+}
+
+protected class MonitorProcessJob : Job
+{
+    private List<D_ProcessInfo> _process_list;
+    private int _check_timer;
+
+    private Map<int, ProcessCpuInfo> _process_cpu_map = new Map<int, ProcessCpuInfo>();
+
+    public get data_info() : D_JobInfo
+    {
+        var data = Job.data_info(this);
+        data.process_list = this._process_list;
+        return data;
+    }
+
+    public get status_info() : NJobStatus
+    {
+        var status_msg = Job.status_info(this);
+        status_msg.process_list = this._process_list;
+        return status_msg;
+    }
+
+    public await fun Execute(BuildInfo build_info) : string, string
+    {
+        return null, null;
+    }
+
+    private fun OnDetailUpdate()
+    {
+        if (this._check_timer != null)
+        {
+            A_LoopSystem.RemoveTimer(this._check_timer);
+            this._check_timer = null;
+        }
+
+        if (this._info.detail.monitorprocess_exe_path == null) return;
+
+        // 检查文件是否存在
+        if (ALittle.File_GetFileAttr(this._info.detail.monitorprocess_exe_path) == null) return;
+
+        this._check_timer = A_LoopSystem.AddTimer(10000, bind(this.HandleProcessInfo, this), -1, 10000);
+    }
+
+    private fun HandleProcessInfo()
+    {
+        this._process_list = new List<D_ProcessInfo>();
+
+        var process_id_list = carp.GetProcessIDByPath(this._info.detail.monitorprocess_exe_path);
+        for (var index, process_id in process_id_list)
+        {
+            var cpu_info = this._process_cpu_map[process_id];
+            if (cpu_info == null)
+            {
+                cpu_info = new ProcessCpuInfo();
+                cpu_info.last_time = 0;
+                cpu_info.last_system_time = 0;
+                this._process_cpu_map[process_id] = cpu_info;
+            }
+            var cpu = -1;
+            cpu, cpu_info.last_time, cpu_info.last_system_time = carp.GetCPUUsage(process_id, cpu_info.last_time, cpu_info.last_system_time);
+
+            var mem_result, mem, vmem = carp.GetMemoryUsage(process_id);
+
+            var io_result, io_read, io_write = carp.GetIOUsage(process_id);
+
+            var process_info = new D_ProcessInfo();
+            process_info.process_id = process_id;
+            process_info.cpu = cpu;
+            if (mem_result)
+            {
+                process_info.mem = mem;
+                process_info.vmem = vmem;
+            }
+            else
+            {
+                process_info.mem = -1;
+                process_info.vmem = -1;
+            }
+
+            if (io_result)
+            {
+                process_info.io_read = io_read;
+                process_info.io_write = io_write;
+            }
+            else
+            {
+                process_info.io_read = -1;
+                process_info.io_write = -1;
+            }
+
+            ALittle.List_Push(this._process_list, process_info);
+        }
+
+        this.SendStatus();
+    }
+}

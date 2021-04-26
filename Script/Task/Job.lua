@@ -11,8 +11,8 @@ local ___all_struct = ALittle.GetAllStruct()
 
 ALittle.RegStruct(-2035971543, "DeployServer.D_JobInfo", {
 name = "DeployServer.D_JobInfo", ns_name = "DeployServer", rl_name = "D_JobInfo", hash_code = -2035971543,
-name_list = {"job_type","job_name","status","progress","detail"},
-type_list = {"int","string","int","double","DeployServer.JobInfoDetail"},
+name_list = {"job_type","job_name","status","progress","detail","process_list"},
+type_list = {"int","string","int","double","DeployServer.JobInfoDetail","List<DeployServer.D_ProcessInfo>"},
 option_map = {}
 })
 ALittle.RegStruct(1811432266, "DeployServer.D_BuildInfo", {
@@ -29,14 +29,20 @@ option_map = {}
 })
 ALittle.RegStruct(1462309182, "DeployServer.NJobStatus", {
 name = "DeployServer.NJobStatus", ns_name = "DeployServer", rl_name = "NJobStatus", hash_code = 1462309182,
-name_list = {"task_id","index","status","progress"},
-type_list = {"int","int","int","double"},
+name_list = {"task_id","index","status","progress","process_list"},
+type_list = {"int","int","int","double","List<DeployServer.D_ProcessInfo>"},
 option_map = {}
 })
 ALittle.RegStruct(1232578034, "DeployServer.JobInfoDetail", {
 name = "DeployServer.JobInfoDetail", ns_name = "DeployServer", rl_name = "JobInfoDetail", hash_code = 1232578034,
-name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd","wait_p_exit_exe_path","wait_p_exit_max_time","createprocess_dir","createprocess_cmd","createprocess_param","killprocess_exe_path","r2r_resharper_exe_path","r2r_resharper_cache_path","r2r_resharper_output_path","r2r_resharper_sln_path","r2r_resharper_dotsettings_path","r2r_redmine_url","r2r_redmine_account","r2r_redmine_password","r2r_redmine_project_id","r2r_redmine_account_id","r2r_redmine_account_map","r2r_curl_exe_path","r2r_code_tool","igg_chat_room_id","igg_chat_title","igg_chat_content","igg_chat_token"},
-type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>","List<string>","int","string","string","string","List<string>","string","string","string","string","string","string","string","string","string","string","Map<string,int>","string","string","string","string","string","string"},
+name_list = {"batch_dir","batch_cmd","batch_param","deepcopy_src","deepcopy_dst","deepcopy_ext","copyfile_src","copyfile_file","copyfile_dst","virtualkey_exepath","virtualkey_cmd","wait_p_exit_exe_path","wait_p_exit_max_time","createprocess_dir","createprocess_cmd","createprocess_param","killprocess_exe_path","r2r_resharper_exe_path","r2r_resharper_cache_path","r2r_resharper_output_path","r2r_resharper_sln_path","r2r_resharper_dotsettings_path","r2r_redmine_url","r2r_redmine_account","r2r_redmine_password","r2r_redmine_project_id","r2r_redmine_account_id","r2r_redmine_account_map","r2r_curl_exe_path","r2r_code_tool","igg_chat_room_id","igg_chat_title","igg_chat_content","igg_chat_token","monitorprocess_exe_path"},
+type_list = {"string","string","string","string","string","string","string","List<string>","string","string","List<string>","List<string>","int","string","string","string","List<string>","string","string","string","string","string","string","string","string","string","string","Map<string,int>","string","string","string","string","string","string","string"},
+option_map = {}
+})
+ALittle.RegStruct(15214192, "DeployServer.D_ProcessInfo", {
+name = "DeployServer.D_ProcessInfo", ns_name = "DeployServer", rl_name = "D_ProcessInfo", hash_code = 15214192,
+name_list = {"process_id","cpu","mem","vmem","io_read","io_write"},
+type_list = {"int","int","int","int","int","int"},
 option_map = {}
 })
 
@@ -51,6 +57,7 @@ DeployServer.JobType = {
 	KILLPROCESS = 7,
 	RESHARPERREDMINE = 8,
 	IGG_CHAT = 9,
+	MONITORPROCESS = 10,
 }
 
 DeployServer.JobStatus = {
@@ -67,6 +74,7 @@ function DeployServer.Job:Ctor(task, info)
 	___rawset(self, "_progress", 0)
 	___rawset(self, "_task", task)
 	___rawset(self, "_info", info)
+	self:OnDetailUpdate()
 end
 
 function DeployServer.Job.__getter:info()
@@ -83,9 +91,19 @@ function DeployServer.Job.__getter:data_info()
 	return data
 end
 
+function DeployServer.Job.__getter:status_info()
+	local status_msg = {}
+	status_msg.task_id = self._task.info.task_id
+	status_msg.index = self._task:GetJobIndex(self)
+	status_msg.status = self._status
+	status_msg.progress = self._progress
+	return status_msg
+end
+
 function DeployServer.Job:Modify(msg)
 	self._info.job_name = msg.job_name
 	self._info.detail = msg.detail
+	self:OnDetailUpdate()
 end
 
 function DeployServer.Job:Waiting()
@@ -124,12 +142,11 @@ function DeployServer.Job:Execute(build_info)
 end
 
 function DeployServer.Job:SendStatus()
-	local status_msg = {}
-	status_msg.task_id = self._task.info.task_id
-	status_msg.index = self._task:GetJobIndex(self)
-	status_msg.status = self._status
-	status_msg.progress = self._progress
+	local status_msg = self.status_info
 	A_WebAccountManager:SendMsgToAll(___all_struct[1462309182], status_msg)
+end
+
+function DeployServer.Job:OnDetailUpdate()
 end
 
 function DeployServer.CreateJob(task, info)
@@ -151,6 +168,8 @@ function DeployServer.CreateJob(task, info)
 		return DeployServer.ReSharperRedmineJob(task, info)
 	elseif info.job_type == 9 then
 		return DeployServer.IGGChatJob(task, info)
+	elseif info.job_type == 10 then
+		return DeployServer.MonitorProcessJob(task, info)
 	end
 	return nil
 end
