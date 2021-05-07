@@ -13,9 +13,12 @@ public async static __Module_Setup(string sengine_path, string module_path, stri
     alittle.Require(sengine_path, "Script/WebAccount/WebOPSManager");
     
     g_ModuleScriptPath = module_path.."Script/";
-    alittle.RequireFromPaths(module_path, "Script/Utility/", paths("src/Utility"));
-    alittle.RequireFromPaths(module_path, "Script/Task/", paths("src/Task"));
-    
+
+    var require = new ALittle.Require();
+    require.AddPaths(module_path, "Script/Utility/", paths("src/Utility"));
+    require.AddPaths(module_path, "Script/Task/", paths("src/Task"));
+    require.Start();
+
     lua.math.randomseed(lua.os.time());
     g_ConfigSystem = ALittle.CreateJsonConfig(config_path, true);
     var wan_ip = g_ConfigSystem.GetConfig("wan_ip", "127.0.0.1");

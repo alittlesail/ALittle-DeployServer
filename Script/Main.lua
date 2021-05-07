@@ -22,13 +22,27 @@ function DeployServer.__Module_Setup(sengine_path, module_path, config_path)
 	Require(sengine_path, "Script/WebAccount/WebAccountManager")
 	Require(sengine_path, "Script/WebAccount/WebOPSManager")
 	DeployServer.g_ModuleScriptPath = module_path .. "Script/"
-	RequireFromPaths(module_path, "Script/Utility/", {"WebHookManager.alittle", "SettingManager.alittle", "KeyValueManager.alittle"
-		, "DirectoryManager.alittle"})
-	RequireFromPaths(module_path, "Script/Task/", {"TaskManager.alittle", "Task.alittle", "Job.alittle"
-		, "Build.alittle", "Jobs/WaitProcessExitJob.alittle", "Jobs/SendVirtualKeyJob.alittle"
-		, "Jobs/ReSharperRedmineJob.alittle", "Jobs/MonitorProcessJob.alittle", "Jobs/KillProcessJob.alittle"
-		, "Jobs/IGGChatJob.alittle", "Jobs/DeepCopyJob.alittle", "Jobs/CreateProcessJob.alittle"
-		, "Jobs/CopyFileJob.alittle", "Jobs/BatchJob.alittle", "Workers/JobWorker.alittle"})
+	local require = ALittle.Require()
+	require:AddPaths(module_path, "Script/Utility/", {{"DirectoryManager"}
+		,{"KeyValueManager"}
+		,{"SettingManager"}
+		,{"WebHookManager"}})
+	require:AddPaths(module_path, "Script/Task/", {{"Build"}
+		,{"Job"}
+		,{"Jobs/BatchJob","Job"}
+		,{"Jobs/CopyFileJob","Job"}
+		,{"Jobs/CreateProcessJob","Job"}
+		,{"Jobs/DeepCopyJob","Job"}
+		,{"Jobs/IGGChatJob","Job"}
+		,{"Jobs/KillProcessJob","Job"}
+		,{"Jobs/MonitorProcessJob","Job"}
+		,{"Jobs/ReSharperRedmineJob","Job"}
+		,{"Jobs/SendVirtualKeyJob","Job"}
+		,{"Jobs/WaitProcessExitJob","Job"}
+		,{"Task"}
+		,{"TaskManager"}
+		,{"Workers/JobWorker"}})
+	require:Start()
 	math.randomseed(os.time())
 	DeployServer.g_ConfigSystem = ALittle.CreateJsonConfig(config_path, true)
 	local wan_ip = DeployServer.g_ConfigSystem:GetConfig("wan_ip", "127.0.0.1")
