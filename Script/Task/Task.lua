@@ -389,6 +389,7 @@ function DeployServer.Task:StartImpl()
 		end
 		build_info.log_list = new_list
 	end
+	A_MysqlSystem:InsertInto(___all_struct[361832837], build_info)
 	self._status = 0
 	self._progress = 1
 	self:SendStatus()

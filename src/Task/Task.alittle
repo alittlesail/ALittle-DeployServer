@@ -304,7 +304,7 @@ protected class Task
             log_file.close();
         }
 
-        // 只保存最近的1000条记录
+        // 只保存最近的100条记录
         var len = ALittle.List_Len(build_info.log_list);
         if (len > 100)
         {
@@ -317,6 +317,9 @@ protected class Task
             }
             build_info.log_list = new_list;
         }
+
+        // 插入数据库
+        A_MysqlSystem.InsertInto(build_info);
 
         this._status = TaskStatus.IDLE;
         this._progress = 1;
