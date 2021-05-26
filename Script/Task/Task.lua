@@ -301,6 +301,18 @@ end
 
 function DeployServer.Task:HandleTimerOnce()
 	self._timer_id = nil
+	self._info.timer.type = 0
+	local ntf = {}
+	ntf.task_id = self._info.task_id
+	ntf.task_name = self._info.task_name
+	ntf.task_desc = self._info.task_desc
+	ntf.web_hook = {}
+	for value, _ in ___pairs(self._info.web_hook) do
+		ALittle.List_Push(ntf.web_hook, value)
+	end
+	ntf.timer = self._info.timer
+	A_WebAccountManager:SendMsgToAll(___all_struct[-1662612614], ntf)
+	self:Save()
 	self:ForceStart()
 end
 

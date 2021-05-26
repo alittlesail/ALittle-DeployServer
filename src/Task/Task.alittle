@@ -211,6 +211,21 @@ protected class Task
     private fun HandleTimerOnce()
     {
         this._timer_id = null;
+        this._info.timer.type = TaskTimerType.NONE;
+
+        // 更新
+        var ntf = new NUpdateTaskInfo();
+        ntf.task_id = this._info.task_id;
+        ntf.task_name = this._info.task_name;
+        ntf.task_desc = this._info.task_desc;
+        ntf.web_hook = new List<string>();
+        for (var value, _ in this._info.web_hook)
+        	ALittle.List_Push(ntf.web_hook, value);
+        ntf.timer = this._info.timer;
+        A_WebAccountManager.SendMsgToAll(ntf);
+
+        this.Save();
+
         this.ForceStart();
     }
 
