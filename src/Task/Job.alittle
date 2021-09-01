@@ -34,7 +34,7 @@ public struct JobInfoDetail
     string copyfile_dst;
 
     // 发送虚拟按键
-    string virtualkey_exepath;	// exe的绝对路径
+    List<string> virtualkey_exepath;	// exe的绝对路径
     List<string> virtualkey_cmd;		// 命令
 
     // 等待进程退出

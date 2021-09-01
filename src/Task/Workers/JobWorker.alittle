@@ -54,10 +54,10 @@ public await static HandleDeepCopyWorker(ALittle.IWorkerCommon sender, QDeepCopy
     var rsp = new ADeepCopyExecute();
     if (detail.deepcopy_ext == "") detail.deepcopy_ext = null;
     var attr = ALittle.File_GetFileAttr(detail.deepcopy_src);
-    assert (attr != null && attr.directory, "源目录不存在");
+    assert (attr != null && attr.directory, "源目录不存在:"..detail.deepcopy_src);
     ALittle.File_MakeDeepDir(detail.deepcopy_dst);
     attr = ALittle.File_GetFileAttr(detail.deepcopy_dst);
-    assert (attr != null && attr.directory, "目标目录创建失败");
+    assert (attr != null && attr.directory, "目标目录创建失败:"..detail.deepcopy_dst);
     ALittle.File_CopyDeepDir(detail.deepcopy_src, detail.deepcopy_dst, detail.deepcopy_ext);
     return rsp;
 }
@@ -77,10 +77,10 @@ public await static HandleCopyFileWorker(ALittle.IWorkerCommon sender, QCopyFile
     var detail = msg.detail;
     var rsp = new ACopyFileExecute();
     var attr = ALittle.File_GetFileAttr(detail.copyfile_src);
-    assert (attr != null && attr.directory, "源目录不存在");
+    assert (attr != null && attr.directory, "源目录不存在:"..detail.copyfile_src);
     ALittle.File_MakeDeepDir(detail.copyfile_dst);
     attr = ALittle.File_GetFileAttr(detail.copyfile_dst);
-    assert (attr != null && attr.directory, "目标目录创建失败");
+    assert (attr != null && attr.directory, "目标目录创建失败:"..detail.copyfile_dst);
 
     var src = ALittle.File_PathEndWithSplit(detail.copyfile_src);
     var dst = ALittle.File_PathEndWithSplit(detail.copyfile_dst);
@@ -109,16 +109,19 @@ public await static HandleSendVirtualKeyWorker(ALittle.IWorkerCommon sender, QSe
 
     var cmd_list = msg.detail.virtualkey_cmd;
     var rsp = new ASendVirtualKeyExecute();
-    var pids = carp.GetProcessIDByPath(detail.virtualkey_exepath);
-    rsp.content = "发送的进程个数为:"..ALittle.List_Len(pids).."\n";
-    for (var index, pid in pids)
+    for (var _, exepath in detail.virtualkey_exepath)
     {
-        for (var _, cmd in cmd_list)
+        var pids = carp.GetProcessIDByPath(exepath);
+        rsp.content = "发送的进程个数为:"..ALittle.List_Len(pids).."\n";
+        for (var index, pid in pids)
         {
-            if (ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) != "\n")
-            	cmd = cmd.."\n";
-            rsp.content = rsp.content.."向进程ID:"..pid.." 发送命令:"..cmd;
-            assert(carp.SendVirtualKey(pid, cmd), "发送失败");
+            for (var __, cmd in cmd_list)
+            {
+                if (ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) != "\n")
+                    cmd = cmd.."\n";
+                rsp.content = rsp.content.."向进程ID:"..pid.." 发送命令:"..cmd;
+                assert(carp.SendVirtualKey(pid, cmd), "发送失败:"..cmd);
+            }
         }
     }
 
@@ -195,7 +198,7 @@ public await static HandleCreateProgressWorker(ALittle.IWorkerCommon sender, QCr
     var work_path:string;
     if (detail.createprocess_dir != null && detail.createprocess_dir != "") work_path = detail.createprocess_dir;
     var result = carp.CreateProcess(detail.createprocess_cmd, detail.createprocess_param, work_path);
-    assert(result, "进程创建失败");
+    assert(result, "进程创建失败:"..detail.createprocess_cmd);
     return new ACreateProgressExecute();
 }
 
@@ -242,13 +245,13 @@ public await static HandleReSharperCodeCheckWorker(ALittle.IWorkerCommon sender,
     // 检查inspectcode.exe是否存在
     {
         var attr = ALittle.File_GetFileAttr(detail.r2r_resharper_exe_path);
-	    assert (attr != null && !attr.directory, "检查工具不存在");
+	    assert (attr != null && !attr.directory, "检查工具不存在:"..detail.r2r_resharper_exe_path);
     }
 
     // 检查工程文件
     {
         var attr = ALittle.File_GetFileAttr(detail.r2r_resharper_sln_path);
-        assert (attr != null && !attr.directory, "要检查的工程文件不存在");
+        assert (attr != null && !attr.directory, "要检查的工程文件不存在:"..detail.r2r_resharper_sln_path);
     }
 
     // 创建缓存目录，输出目录
@@ -332,7 +335,7 @@ public await static HandleRedmineDeleteIssuesAssignedToSelfWorker(ALittle.IWorke
     // 检查curl.exe是否存在
     {
         var attr = ALittle.File_GetFileAttr(msg.curl_exe_path);
-	    assert (attr != null && !attr.directory, "curl工具不存在");
+	    assert (attr != null && !attr.directory, "curl工具不存在:"..msg.curl_exe_path);
     }
 
     var issues_map = new Map<int, bool>();
@@ -413,7 +416,7 @@ public await static HandleRedmineCreateIssueWorker(ALittle.IWorkerCommon sender,
     // 检查curl.exe是否存在
     {
         var attr = ALittle.File_GetFileAttr(msg.curl_exe_path);
-	    assert (attr != null && !attr.directory, "curl工具不存在");
+	    assert (attr != null && !attr.directory, "curl工具不存在:"..msg.curl_exe_path);
     }
 
     // 获取指派给的项目

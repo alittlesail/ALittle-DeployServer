@@ -215,10 +215,10 @@ function DeployServer.HandleDeepCopyWorker(sender, msg)
 		detail.deepcopy_ext = nil
 	end
 	local attr = ALittle.File_GetFileAttr(detail.deepcopy_src)
-	Lua.Assert(attr ~= nil and attr.directory, "源目录不存在")
+	Lua.Assert(attr ~= nil and attr.directory, "源目录不存在:" .. detail.deepcopy_src)
 	ALittle.File_MakeDeepDir(detail.deepcopy_dst)
 	attr = ALittle.File_GetFileAttr(detail.deepcopy_dst)
-	Lua.Assert(attr ~= nil and attr.directory, "目标目录创建失败")
+	Lua.Assert(attr ~= nil and attr.directory, "目标目录创建失败:" .. detail.deepcopy_dst)
 	ALittle.File_CopyDeepDir(detail.deepcopy_src, detail.deepcopy_dst, detail.deepcopy_ext)
 	return rsp
 end
@@ -229,10 +229,10 @@ function DeployServer.HandleCopyFileWorker(sender, msg)
 	local detail = msg.detail
 	local rsp = {}
 	local attr = ALittle.File_GetFileAttr(detail.copyfile_src)
-	Lua.Assert(attr ~= nil and attr.directory, "源目录不存在")
+	Lua.Assert(attr ~= nil and attr.directory, "源目录不存在:" .. detail.copyfile_src)
 	ALittle.File_MakeDeepDir(detail.copyfile_dst)
 	attr = ALittle.File_GetFileAttr(detail.copyfile_dst)
-	Lua.Assert(attr ~= nil and attr.directory, "目标目录创建失败")
+	Lua.Assert(attr ~= nil and attr.directory, "目标目录创建失败:" .. detail.copyfile_dst)
 	local src = ALittle.File_PathEndWithSplit(detail.copyfile_src)
 	local dst = ALittle.File_PathEndWithSplit(detail.copyfile_dst)
 	for index, file_name in ___ipairs(detail.copyfile_file) do
@@ -248,15 +248,17 @@ function DeployServer.HandleSendVirtualKeyWorker(sender, msg)
 	local detail = msg.detail
 	local cmd_list = msg.detail.virtualkey_cmd
 	local rsp = {}
-	local pids = carp.GetProcessIDByPath(detail.virtualkey_exepath)
-	rsp.content = "发送的进程个数为:" .. ALittle.List_Len(pids) .. "\n"
-	for index, pid in ___ipairs(pids) do
-		for _, cmd in ___ipairs(cmd_list) do
-			if ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) ~= "\n" then
-				cmd = cmd .. "\n"
+	for _, exepath in ___ipairs(detail.virtualkey_exepath) do
+		local pids = carp.GetProcessIDByPath(exepath)
+		rsp.content = "发送的进程个数为:" .. ALittle.List_Len(pids) .. "\n"
+		for index, pid in ___ipairs(pids) do
+			for __, cmd in ___ipairs(cmd_list) do
+				if ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) ~= "\n" then
+					cmd = cmd .. "\n"
+				end
+				rsp.content = rsp.content .. "向进程ID:" .. pid .. " 发送命令:" .. cmd
+				Lua.Assert(carp.SendVirtualKey(pid, cmd), "发送失败:" .. cmd)
 			end
-			rsp.content = rsp.content .. "向进程ID:" .. pid .. " 发送命令:" .. cmd
-			Lua.Assert(carp.SendVirtualKey(pid, cmd), "发送失败")
 		end
 	end
 	return rsp
@@ -308,7 +310,7 @@ function DeployServer.HandleCreateProgressWorker(sender, msg)
 		work_path = detail.createprocess_dir
 	end
 	local result = carp.CreateProcess(detail.createprocess_cmd, detail.createprocess_param, work_path)
-	Lua.Assert(result, "进程创建失败")
+	Lua.Assert(result, "进程创建失败:" .. detail.createprocess_cmd)
 	return {}
 end
 
@@ -331,11 +333,11 @@ function DeployServer.HandleReSharperCodeCheckWorker(sender, msg)
 	local detail = msg.detail
 	do
 		local attr = ALittle.File_GetFileAttr(detail.r2r_resharper_exe_path)
-		Lua.Assert(attr ~= nil and not attr.directory, "检查工具不存在")
+		Lua.Assert(attr ~= nil and not attr.directory, "检查工具不存在:" .. detail.r2r_resharper_exe_path)
 	end
 	do
 		local attr = ALittle.File_GetFileAttr(detail.r2r_resharper_sln_path)
-		Lua.Assert(attr ~= nil and not attr.directory, "要检查的工程文件不存在")
+		Lua.Assert(attr ~= nil and not attr.directory, "要检查的工程文件不存在:" .. detail.r2r_resharper_sln_path)
 	end
 	do
 		Lua.Assert(detail.r2r_resharper_cache_path ~= "", "缓存路径不能为空")
@@ -367,7 +369,7 @@ function DeployServer.HandleRedmineDeleteIssuesAssignedToSelfWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	do
 		local attr = ALittle.File_GetFileAttr(msg.curl_exe_path)
-		Lua.Assert(attr ~= nil and not attr.directory, "curl工具不存在")
+		Lua.Assert(attr ~= nil and not attr.directory, "curl工具不存在:" .. msg.curl_exe_path)
 	end
 	local issues_map = {}
 	local list_issues
@@ -408,7 +410,7 @@ function DeployServer.HandleRedmineCreateIssueWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	do
 		local attr = ALittle.File_GetFileAttr(msg.curl_exe_path)
-		Lua.Assert(attr ~= nil and not attr.directory, "curl工具不存在")
+		Lua.Assert(attr ~= nil and not attr.directory, "curl工具不存在:" .. msg.curl_exe_path)
 	end
 	do
 		local cmd = msg.curl_exe_path
