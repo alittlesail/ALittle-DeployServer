@@ -72,6 +72,7 @@ public struct JobInfoDetail
 
     // 监视进程
     string monitorprocess_exe_path;	// 可执行文件路径
+    bool monitorprocess_auto_start;	// 当发现没有进程时，是否无参数启动
 }
 
 protected struct JobInfo

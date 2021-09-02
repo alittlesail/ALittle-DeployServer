@@ -100,5 +100,12 @@ protected class MonitorProcessJob : Job
         }
 
         this.SendStatus();
+
+        // 如果进程不见了，并且需要自动重启
+        if (ALittle.List_Len(process_id_list) == 0 && this._info.detail.monitorprocess_auto_start)
+        {
+            var work_path:string = ALittle.File_GetFilePathByPath(this._info.detail.monitorprocess_exe_path);
+            var result = carp.CreateProcess(this._info.detail.monitorprocess_exe_path, "", work_path);
+        }
     }
 }

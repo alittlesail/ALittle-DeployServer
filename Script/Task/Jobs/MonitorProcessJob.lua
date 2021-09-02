@@ -88,6 +88,10 @@ function DeployServer.MonitorProcessJob:HandleProcessInfo()
 		ALittle.List_Push(self._process_list, process_info)
 	end
 	self:SendStatus()
+	if ALittle.List_Len(process_id_list) == 0 and self._info.detail.monitorprocess_auto_start then
+		local work_path = ALittle.File_GetFilePathByPath(self._info.detail.monitorprocess_exe_path)
+		local result = carp.CreateProcess(self._info.detail.monitorprocess_exe_path, "", work_path)
+	end
 end
 
 end
