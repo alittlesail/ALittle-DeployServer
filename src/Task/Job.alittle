@@ -22,6 +22,7 @@ public struct JobInfoDetail
     string batch_dir;
     string batch_cmd;
     string batch_param;
+    bool batch_wait;
 
     // 深度拷贝
     string deepcopy_src;

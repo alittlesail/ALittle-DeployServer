@@ -19,22 +19,35 @@ public await static HandleBatchWorker(ALittle.IWorkerCommon sender, QBatchExecut
 
     var rsp = new ABatchExecute();
 
-    var cmd = "";
-    if (detail.batch_dir != null && detail.batch_dir != "")
+    if (detail.batch_wait)
     {
-        var index = ALittle.String_Find(detail.batch_dir, ":");
-        if (index != null)
-            cmd = cmd..ALittle.String_Sub(detail.batch_dir, 1, index).." && ";
-        if (index != ALittle.String_Len(detail.batch_dir))
-        	cmd = cmd.."cd \""..detail.batch_dir.."\" && ";
+        var cmd = "";
+        if (detail.batch_dir != null && detail.batch_dir != "")
+        {
+            var index = ALittle.String_Find(detail.batch_dir, ":");
+            if (index != null)
+                cmd = cmd..ALittle.String_Sub(detail.batch_dir, 1, index).." && ";
+            if (index != ALittle.String_Len(detail.batch_dir))
+                cmd = cmd.."cd \""..detail.batch_dir.."\" && ";
+        }
+        cmd = cmd..detail.batch_cmd.." "..detail.batch_param;
+        ALittle.Log(cmd);
+        var file = lua.io.popen(cmd, "rb");
+        assert (file != null, "命令执行失败:"..cmd);
+        rsp.content = file.read("*a");
+        var result, error, status = file.close();
+        rsp.exit_code = status;
     }
-    cmd = cmd..detail.batch_cmd.." "..detail.batch_param;
-    ALittle.Log(cmd);
-    var file = lua.io.popen(cmd, "rb");
-    assert (file != null, "命令执行失败:"..cmd);
-    rsp.content = file.read("*a");
-    var result, error, status = file.close();
-    rsp.exit_code = status;
+    else
+    {
+        ALittle.Log(detail.batch_cmd.." "..detail.batch_param);
+        var result = carp.CreateProcess(detail.batch_cmd, detail.batch_param, detail.batch_dir);
+        rsp.content = "";
+        if (result)
+	        rsp.exit_code = 0;
+        else
+        	rsp.exit_code = -1;
+    }
     return rsp;
 }
 

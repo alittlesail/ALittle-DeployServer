@@ -186,23 +186,34 @@ function DeployServer.HandleBatchWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	local detail = msg.detail
 	local rsp = {}
-	local cmd = ""
-	if detail.batch_dir ~= nil and detail.batch_dir ~= "" then
-		local index = ALittle.String_Find(detail.batch_dir, ":")
-		if index ~= nil then
-			cmd = cmd .. ALittle.String_Sub(detail.batch_dir, 1, index) .. " && "
+	if detail.batch_wait then
+		local cmd = ""
+		if detail.batch_dir ~= nil and detail.batch_dir ~= "" then
+			local index = ALittle.String_Find(detail.batch_dir, ":")
+			if index ~= nil then
+				cmd = cmd .. ALittle.String_Sub(detail.batch_dir, 1, index) .. " && "
+			end
+			if index ~= ALittle.String_Len(detail.batch_dir) then
+				cmd = cmd .. "cd \"" .. detail.batch_dir .. "\" && "
+			end
 		end
-		if index ~= ALittle.String_Len(detail.batch_dir) then
-			cmd = cmd .. "cd \"" .. detail.batch_dir .. "\" && "
+		cmd = cmd .. detail.batch_cmd .. " " .. detail.batch_param
+		ALittle.Log(cmd)
+		local file = io.popen(cmd, "rb")
+		Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
+		rsp.content = file:read("*a")
+		local result, error, status = file:close()
+		rsp.exit_code = status
+	else
+		ALittle.Log(detail.batch_cmd .. " " .. detail.batch_param)
+		local result = carp.CreateProcess(detail.batch_cmd, detail.batch_param, detail.batch_dir)
+		rsp.content = ""
+		if result then
+			rsp.exit_code = 0
+		else
+			rsp.exit_code = -1
 		end
 	end
-	cmd = cmd .. detail.batch_cmd .. " " .. detail.batch_param
-	ALittle.Log(cmd)
-	local file = io.popen(cmd, "rb")
-	Lua.Assert(file ~= nil, "命令执行失败:" .. cmd)
-	rsp.content = file:read("*a")
-	local result, error, status = file:close()
-	rsp.exit_code = status
 	return rsp
 end
 
