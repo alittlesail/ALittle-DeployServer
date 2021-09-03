@@ -195,10 +195,13 @@ public await static HandleCreateProgressWorker(ALittle.IWorkerCommon sender, QCr
 {
     var detail = msg.detail;
 
-    var work_path:string;
-    if (detail.createprocess_dir != null && detail.createprocess_dir != "") work_path = detail.createprocess_dir;
-    var result = carp.CreateProcess(detail.createprocess_cmd, detail.createprocess_param, work_path);
-    assert(result, "进程创建失败:"..detail.createprocess_cmd);
+    for (var index, exe_path in detail.createprocess_exe_path)
+    {
+        var work_path = ALittle.File_GetFilePathByPath(exe_path);
+        var result = carp.CreateProcess(exe_path, "", work_path);
+        assert(result, "进程创建失败:"..exe_path);
+    }
+
     return new ACreateProgressExecute();
 }
 

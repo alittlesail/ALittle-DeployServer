@@ -305,12 +305,11 @@ ALittle.RegWorkerRpcCallback(2052715406, DeployServer.HandleWaitProcessExitWorke
 function DeployServer.HandleCreateProgressWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	local detail = msg.detail
-	local work_path
-	if detail.createprocess_dir ~= nil and detail.createprocess_dir ~= "" then
-		work_path = detail.createprocess_dir
+	for index, exe_path in ___ipairs(detail.createprocess_exe_path) do
+		local work_path = ALittle.File_GetFilePathByPath(exe_path)
+		local result = carp.CreateProcess(exe_path, "", work_path)
+		Lua.Assert(result, "进程创建失败:" .. exe_path)
 	end
-	local result = carp.CreateProcess(detail.createprocess_cmd, detail.createprocess_param, work_path)
-	Lua.Assert(result, "进程创建失败:" .. detail.createprocess_cmd)
 	return {}
 end
 

@@ -42,9 +42,7 @@ public struct JobInfoDetail
     int wait_p_exit_max_time;			// 最多等待多少秒，小于或等于0表示永远等待
 
     // 创建进程
-    string createprocess_dir;
-    string createprocess_cmd;
-    string createprocess_param;
+    List<string> createprocess_exe_path;
 
     // 杀死进程
     List<string> killprocess_exe_path;	//  exe的绝对路径
