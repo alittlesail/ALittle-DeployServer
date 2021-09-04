@@ -490,8 +490,6 @@ protected class Task
 
     public fun ModifyJob(C2SModifyJob msg)
     {
-        assert(this._status == TaskStatus.IDLE, "当前任务不是空闲状态");
-
         var job = this._job_list[msg.job_index];
         assert(job != null, "任务不存在");
 

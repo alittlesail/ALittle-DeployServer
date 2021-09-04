@@ -117,7 +117,7 @@ function DeployServer.Job:Doing(build_info)
 	self._status = 1
 	self._progress = 0
 	self:SendStatus()
-	ALittle.List_Push(build_info.log_list, "===>[" .. ALittle.Time_GetCurDate() .. "]Job Begin:" .. self._info.job_name)
+	ALittle.List_Push(build_info.log_list, "===>[" .. ALittle.Time_GetCurDate() .. "]Job:" .. self._info.job_name)
 	local error, log = self:Execute(build_info)
 	if log ~= nil then
 		local log_list = ALittle.String_SplitSepList(log, {"\r", "\n"})
@@ -125,7 +125,6 @@ function DeployServer.Job:Doing(build_info)
 			ALittle.List_Push(build_info.log_list, log_content)
 		end
 	end
-	ALittle.List_Push(build_info.log_list, "===>[" .. ALittle.Time_GetCurDate() .. "]Job End")
 	if error ~= nil then
 		self._status = 3
 	else
