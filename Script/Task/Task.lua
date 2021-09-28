@@ -530,7 +530,6 @@ function DeployServer.Task:CopyJob(msg)
 end
 
 function DeployServer.Task:ModifyJob(msg)
-	Lua.Assert(self._status == 0, "当前任务不是空闲状态")
 	local job = self._job_list[msg.job_index]
 	Lua.Assert(job ~= nil, "任务不存在")
 	job:Modify(msg)
