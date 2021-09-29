@@ -133,7 +133,10 @@ public await static HandleSendVirtualKeyWorker(ALittle.IWorkerCommon sender, QSe
                 if (ALittle.String_Sub(cmd, ALittle.String_Len(cmd)) != "\n")
                     cmd = cmd.."\n";
                 rsp.content = rsp.content.."向进程ID:"..pid.." 发送命令:"..cmd;
-                assert(carp.SendVirtualKey(pid, cmd), "发送失败:"..cmd);
+                if (carp.SendVirtualKey(pid, cmd))
+                	rsp.content = rsp.content.." 成功";
+                else
+                    rsp.content = rsp.content.." 失败";
             }
         }
     }

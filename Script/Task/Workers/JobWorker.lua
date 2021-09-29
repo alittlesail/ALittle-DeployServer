@@ -268,7 +268,11 @@ function DeployServer.HandleSendVirtualKeyWorker(sender, msg)
 					cmd = cmd .. "\n"
 				end
 				rsp.content = rsp.content .. "向进程ID:" .. pid .. " 发送命令:" .. cmd
-				Lua.Assert(carp.SendVirtualKey(pid, cmd), "发送失败:" .. cmd)
+				if carp.SendVirtualKey(pid, cmd) then
+					rsp.content = rsp.content .. " 成功"
+				else
+					rsp.content = rsp.content .. " 失败"
+				end
 			end
 		end
 	end
