@@ -8,6 +8,6 @@ protected class KillProcessJob : Job
         var msg = new QKillProcessExecute();
         msg.detail = this._info.detail;
         var error, rsp = HandleKillProcessWorker(g_LJobWorker, msg);
-        return error, null;
+        return error, rsp.content;
     }
 }

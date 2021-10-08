@@ -57,8 +57,8 @@ option_map = {}
 })
 ALittle.RegStruct(1368739506, "DeployServer.AKillProcessExecute", {
 name = "DeployServer.AKillProcessExecute", ns_name = "DeployServer", rl_name = "AKillProcessExecute", hash_code = 1368739506,
-name_list = {},
-type_list = {},
+name_list = {"content"},
+type_list = {"string"},
 option_map = {}
 })
 ALittle.RegStruct(-1351236611, "DeployServer.QDeepCopyExecute", {
@@ -332,13 +332,20 @@ ALittle.RegWorkerRpcCallback(1248316265, DeployServer.HandleCreateProgressWorker
 function DeployServer.HandleKillProcessWorker(sender, msg)
 	local ___COROUTINE = coroutine.running()
 	local detail = msg.detail
+	local rsp = {}
+	rsp.content = ""
 	for index, exe_path in ___ipairs(detail.killprocess_exe_path) do
 		local pids = carp.GetProcessIDByPath(exe_path)
 		for _, pid in ___ipairs(pids) do
-			carp.KillProcessByID(pid)
+			local result = carp.KillProcessByID(pid)
+			if result then
+				rsp.content = rsp.content .. "进程关闭成功:" .. exe_path
+			else
+				rsp.content = rsp.content .. "进程关闭失败:" .. exe_path
+			end
 		end
 	end
-	return {}
+	return rsp
 end
 
 ALittle.RegWorkerRpcCallback(1166148652, DeployServer.HandleKillProcessWorker, 1368739506)

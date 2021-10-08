@@ -16,7 +16,7 @@ function DeployServer.KillProcessJob:Execute(build_info)
 	local msg = {}
 	msg.detail = self._info.detail
 	local error, rsp = ALittle.IWorkerCommon.InvokeRPC(1166148652, DeployServer.g_LJobWorker, msg)
-	return error, nil
+	return error, rsp.content
 end
 
 end
