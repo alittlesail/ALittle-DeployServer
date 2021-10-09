@@ -196,7 +196,6 @@ function DeployServer.Task:Ctor(info, build_list)
 	___rawset(self, "_build_list", {})
 	___rawset(self, "_status", 0)
 	___rawset(self, "_progress", 0)
-	___rawset(self, "_next_do", false)
 	___rawset(self, "_info", info)
 	___rawset(self, "_build_list", build_list)
 	if info.job_list ~= nil then
@@ -313,16 +312,16 @@ function DeployServer.Task:HandleTimerOnce()
 	ntf.timer = self._info.timer
 	A_WebAccountManager:SendMsgToAll(___all_struct[-1662612614], ntf)
 	self:Save()
-	self:ForceStart()
+	self:Start()
 end
 
 function DeployServer.Task:HandleTimerLoop()
-	self:ForceStart()
+	self:Start()
 end
 
 function DeployServer.Task:HandleTimerPoint()
 	self._timer_id = nil
-	self:ForceStart()
+	self:Start()
 	self:UpdateTimer()
 end
 
@@ -343,19 +342,7 @@ function DeployServer.Task:Start()
 		return "当前任务不是空闲状态"
 	end
 	self:StartImpl()
-	if self._next_do then
-		self._next_do = false
-		self:StartImpl()
-	end
 	return nil
-end
-
-function DeployServer.Task:ForceStart()
-	if self._status ~= 0 then
-		self._next_do = true
-	else
-		self:StartImpl()
-	end
 end
 
 function DeployServer.Task:StartImpl()
@@ -440,7 +427,7 @@ function DeployServer.Task:StartByWebHook(url)
 	end
 	for key, open in ___pairs(self._info.web_hook) do
 		if key == url and open then
-			self:ForceStart()
+			self:Start()
 			break
 		end
 	end

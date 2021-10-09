@@ -73,7 +73,6 @@ protected class Task
     private List<BuildInfo> _build_list = new List<BuildInfo>();
     private int _status = 0;
     private double _progress = 0;
-    private bool _next_do = false;	// 执行成功之后是否继续执行
 
     private int _timer_id;
 
@@ -226,20 +225,20 @@ protected class Task
 
         this.Save();
 
-        this.ForceStart();
+        this.Start();
     }
 
     // 间隔定时
     private fun HandleTimerLoop()
     {
-        this.ForceStart();
+        this.Start();
     }
 
     // 时间点定时
     private fun HandleTimerPoint()
     {
         this._timer_id = null;
-        this.ForceStart();
+        this.Start();
         this.UpdateTimer();
     }
 
@@ -254,26 +253,9 @@ protected class Task
     public fun Start() : string
     {
         if (this._status != TaskStatus.IDLE) return "当前任务不是空闲状态";
+        // 开始执行
         this.StartImpl();
-        if (this._next_do)
-        {
-            this._next_do = false;
-        	this.StartImpl();
-        }
         return null;
-    }
-
-    // 强制启动，如果当前不是空闲，那么等空闲之后再次启动
-    public fun ForceStart()
-    {
-        if (this._status != TaskStatus.IDLE)
-        {
-            this._next_do = true;
-        }
-        else
-        {
-            this.StartImpl();
-        }
     }
 
     private async fun StartImpl()
@@ -376,7 +358,7 @@ protected class Task
         {
             if (key == url && open)
             {
-                this.ForceStart();
+                this.Start();
                 break;
             }
         }
