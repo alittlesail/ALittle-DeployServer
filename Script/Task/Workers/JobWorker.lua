@@ -334,6 +334,9 @@ function DeployServer.HandleKillProcessWorker(sender, msg)
 	local detail = msg.detail
 	local rsp = {}
 	rsp.content = ""
+	if msg.detail.killprocess_delay_time > 0 then
+		A_LoopSystem:Sleep(msg.detail.killprocess_delay_time * 1000)
+	end
 	for index, exe_path in ___ipairs(detail.killprocess_exe_path) do
 		local pids = carp.GetProcessIDByPath(exe_path)
 		for _, pid in ___ipairs(pids) do

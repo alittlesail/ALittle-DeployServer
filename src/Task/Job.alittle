@@ -46,6 +46,7 @@ public struct JobInfoDetail
     List<string> createprocess_exe_path;
 
     // 杀死进程
+    int killprocess_delay_time;			// 杀死进程等待时间
     List<string> killprocess_exe_path;	//  exe的绝对路径
 
     // Resharper检查代码，并输出到Redmine
