@@ -334,7 +334,7 @@ function DeployServer.HandleKillProcessWorker(sender, msg)
 	local detail = msg.detail
 	local rsp = {}
 	rsp.content = ""
-	if msg.detail.killprocess_delay_time > 0 then
+	if msg.detail.killprocess_delay_time ~= nil and msg.detail.killprocess_delay_time > 0 then
 		A_LoopSystem:Sleep(msg.detail.killprocess_delay_time * 1000)
 	end
 	for index, exe_path in ___ipairs(detail.killprocess_exe_path) do

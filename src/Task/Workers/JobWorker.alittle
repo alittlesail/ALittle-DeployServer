@@ -239,7 +239,7 @@ public await static HandleKillProcessWorker(ALittle.IWorkerCommon sender, QKillP
     var rsp = new AKillProcessExecute();
     rsp.content = "";
 
-    if (msg.detail.killprocess_delay_time > 0)
+    if (msg.detail.killprocess_delay_time != null && msg.detail.killprocess_delay_time > 0)
         A_LoopSystem.Sleep(msg.detail.killprocess_delay_time * 1000);
 
     for (var index, exe_path in detail.killprocess_exe_path)
